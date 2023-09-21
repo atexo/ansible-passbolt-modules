@@ -173,7 +173,6 @@ def run_module():
                 folder_id=module.params['folder_id']
             )
 
-
         elif module.params['state'] == 'absent':
             print('Try to get resource in passbolt. Delete it if found.')
 

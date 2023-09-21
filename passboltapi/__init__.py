@@ -5,7 +5,6 @@ import urllib.parse
 from typing import List, Mapping, Optional, Tuple, Union
 
 import gnupg
-import platform
 import requests
 
 from passboltapi.schema import (
@@ -33,26 +32,21 @@ from passboltapi.schema import (
     constructor,
 )
 
+# Passbolt API Functions
+from . import api_authentication as PassboltAuthenticationAPI
+from . import api_comments as PassboltCommentsAPI
+from . import api_favorites as PassboltFavoritesAPI
+from . import api_folders as PassboltFoldersAPI
+from . import api_groups as PassboltGroupsAPI
+from . import api_permissions as PassboltPermissionsAPI
+from . import api_resources as PassboltResourcesAPI
+from . import api_secrets as PassboltSecretsAPI
+from . import api_users as PassboltUsersAPI
+
 LOGIN_URL = "/auth/login.json"
 VERIFY_URL = "/auth/verify.json"
 
-
-class PassboltValidationError(Exception):
-    pass
-
-
 class PassboltError(Exception):
-    pass
-
-
-class PassboltGroupNotFoundError(PassboltError):
-    pass
-
-
-class PassboltUserNotFoundError(PassboltError):
-    pass
-
-class PassboltUserNotActiveError(PassboltError):
     pass
 
 
@@ -325,93 +319,35 @@ class PassboltAPI(APIClient):
                 self.gpg.import_keys(user.gpgkey.armored_key)
                 self.gpg.trust_keys(user.gpgkey.fingerprint, trustlevel)
 
-    def read_resource(self, resource_id: PassboltResourceIdType) -> PassboltResourceTuple:
-        response = self.get(f"/resources/{resource_id}.json", return_response_object=True)
-        response = response.json()["body"]
-        return constructor(PassboltResourceTuple)(response)
+    # Group API
+    def describe_group(self, group_name: str):
+        return PassboltGroupsAPI.describe_group(self, group_name)
+        
+    def describe_group_by_id(self, group_id: PassboltGroupIdType) -> PassboltGroupTuple:
+        return PassboltGroupsAPI.describe_group_by_id(self, group_id)
+    
+    def create_group(self, group_name:str, group_mananger: str) -> PassboltGroupTuple:
+        return PassboltGroupsAPI.create_group(self, group_name, group_mananger)
 
-    def read_resource_type(self, resource_type_id: PassboltResourceTypeIdType) -> PassboltResourceTypeTuple:
-        response = self.get(f"/resource-types/{resource_type_id}.json", return_response_object=True)
-        response = response.json()["body"]
-        return constructor(PassboltResourceTypeTuple)(response)
-
+    # Folder API
     def read_folder(self, folder_id: PassboltFolderIdType) -> PassboltFolderTuple:
-        response = self.get(
-            f"/folders/{folder_id}.json", params={"contain[permissions]": True}, return_response_object=True
-        )
-        response = response.json()
-        return constructor(PassboltFolderTuple, subconstructors={"permissions": constructor(PassboltPermissionTuple)})(
-            response["body"]
-        )
+        return PassboltFoldersAPI.read_folder(self, folder_id)
 
     def create_folder(self, name: str, folder_id: PassboltFolderIdType) -> PassboltFolderTuple:
-        
-        self.read_folder(folder_id=folder_id)
-
-        response = self.post(
-            "/folders.json", {"name": name, "folder_parent_id": folder_id}, return_response_object=True
-        )
-
-        response = response.json()
-        created_folder = constructor(
-            PassboltFolderTuple, subconstructors={"permissions": constructor(PassboltPermissionTuple)})(
-            response["body"]
-        )
-
-        parent_folder = self.read_folder(folder_id)
-        
-        # get users with access to parent folder
-        users_list = self.list_users_with_folder_access(folder_id)
-        lookup_users: Mapping[PassboltUserIdType, PassboltUserTuple] = {user.id: user for user in users_list}
-        self_user_id = [user.id for user in users_list if self.user_fingerprint == user.gpgkey.fingerprint]
-        if self_user_id:
-            self_user_id = self_user_id[0]
-        else:
-            raise ValueError("User not in passbolt")
-        # simulate sharing with folder perms
-        permissions = [
-            {
-                "is_new": True,
-                **{k: v for k, v in perm._asdict().items() if k != "id"},
-            }
-            for perm in parent_folder.permissions
-            if (perm.aro_foreign_key != self_user_id)
-        ]
-
-        share_payload = {
-            "permissions": permissions,
-        }
-
-        r_share = self.put(f"/share/folder/{created_folder.id}.json", share_payload, return_response_object=True)
-
-        return created_folder
+        return PassboltFoldersAPI.create_folder(self, name, folder_id)
 
     def describe_folder(self, folder_id: PassboltFolderIdType):
-        """Shows folder details with permissions that are needed for some downstream task."""
-        response = self.get(
-            f"/folders/{folder_id}.json",
-            params={
-                "contain[permissions]": 1,
-                "contain[permissions.user.profile]": 1,
-                "contain[permissions.group]": 1,
-            },
-        )
-        assert "body" in response.keys(), f"Key 'body' not found in response keys: {response.keys()}"
-        assert (
-            "permissions" in response["body"].keys()
-        ), f"Key 'body.permissions' not found in response: {response['body'].keys()}"
-        return constructor(
-            PassboltFolderTuple,
-            subconstructors={
-                "permissions": constructor(PassboltPermissionTuple),
-            }
-        )(response["body"])
+        return PassboltFoldersAPI.describe_folder(self, folder_id)
 
+    # Resource API
+    def read_resource(self, resource_id: PassboltResourceIdType) -> PassboltResourceTuple:
+        return PassboltResourcesAPI.read_resource(self, resource_id)
+
+    def read_resource_type(self, resource_type_id: PassboltResourceTypeIdType) -> PassboltResourceTypeTuple:
+        return PassboltResourcesAPI.read_resource_type(self, resource_type_id)
+    
     def move_resource_to_folder(self, resource_id: PassboltResourceIdType, folder_id: PassboltFolderIdType):
-        r = self.post(
-            f"/move/resource/{resource_id}.json", {"folder_parent_id": folder_id}, return_response_object=True
-        )
-        return r.json()
+        return PassboltResourcesAPI.move_resource_to_folder(self, resource_id, folder_id)
 
     def create_resource(
         self,
@@ -423,56 +359,8 @@ class PassboltAPI(APIClient):
         resource_type_id: Optional[PassboltResourceTypeIdType] = None,
         folder_id: Optional[PassboltFolderIdType] = None,
     ):
-        """Creates a new resource on passbolt and shares it with the provided folder recipients"""
-        if not name:
-            raise PassboltValidationError(f"Name cannot be None or empty -- {name}!")
-        if not password:
-            raise PassboltValidationError(f"Password cannot be None or empty -- {password}!")
-
-        r_create = self.post(
-            "/resources.json",
-            {
-                "name": name,
-                "username": username,
-                "description": description,
-                "uri": uri,
-                **({"resource_type_id": resource_type_id} if resource_type_id else {}),
-                "secrets": [{"data": self.encrypt(password)}],
-            },
-            return_response_object=True,
-        )
-        resource = constructor(PassboltResourceTuple)(r_create.json()["body"])
-        if folder_id:
-            folder = self.read_folder(folder_id)
-            # get users with access to folder
-            users_list = self.list_users_with_folder_access(folder_id)
-            lookup_users: Mapping[PassboltUserIdType, PassboltUserTuple] = {user.id: user for user in users_list}
-            self_user_id = [user.id for user in users_list if self.user_fingerprint == user.gpgkey.fingerprint]
-            if self_user_id:
-                self_user_id = self_user_id[0]
-            else:
-                raise ValueError("User not in passbolt")
-            # simulate sharing with folder perms
-            permissions = [
-                {
-                    "is_new": True,
-                    **{k: v for k, v in perm._asdict().items() if k != "id"},
-                }
-                for perm in folder.permissions
-                if (perm.aro_foreign_key != self_user_id)
-            ]
-            share_payload = {
-                "permissions": permissions,
-                "secrets": self._encrypt_secrets(password, lookup_users.values()),
-            }
-            # simulate sharing with folder perms
-            r_simulate = self.post(
-                f"/share/simulate/resource/{resource.id}.json", share_payload, return_response_object=True
-            )
-            r_share = self.put(f"/share/resource/{resource.id}.json", share_payload, return_response_object=True)
-
-            self.move_resource_to_folder(resource_id=resource.id, folder_id=folder_id)
-        return resource
+        return PassboltResourcesAPI.create_resource(self, name, password, username, description, uri, 
+                                                          resource_type_id, folder_id)
 
     def update_resource(
         self,
@@ -484,195 +372,21 @@ class PassboltAPI(APIClient):
         resource_type_id: Optional[PassboltResourceTypeIdType] = None,
         password: Optional[str] = None,
     ):
-        resource: PassboltResourceTuple = self.read_resource(resource_id=resource_id)
-        secret = self._get_secret(resource_id=resource_id)
-        secret_type = self._get_secret_type(resource_type_id=resource.resource_type_id)
-        resource_type_id = resource_type_id if resource_type_id else resource.resource_type_id
-        payload = {
-            "name": name,
-            "username": username,
-            "description": description,
-            "uri": uri,
-            "resource_type_id": resource_type_id,
-        }
-        if name is None:
-            payload.pop("name")
-        if username is None:
-            payload.pop("username")
-        if description is None:
-            payload.pop("description")
-        if uri is None:
-            payload.pop("uri")
+        return PassboltResourcesAPI.update_resource(self, resource_id, name, password, username, description, uri, 
+                                                          resource_type_id, password)
 
-        recipients = self.list_users(resource_or_folder_id=resource_id)
-        if secret_type == PassboltResourceType.PASSWORD:
-            if password is not None:
-                assert isinstance(password, str), f"password has to be a string object -- {password}"
-                payload["secrets"] = self._encrypt_secrets(secret_text=password, recipients=recipients)
-        elif secret_type == PassboltResourceType.PASSWORD_WITH_DESCRIPTION:
-            pwd, desc = self._json_load_secret(secret=secret)
-            secret_dict = {}
-            if description is not None or password is not None:
-                secret_dict["description"] = description if description else desc
-                secret_dict["password"] = password if password else pwd
-            if secret_dict:
-                secret_text = json.dumps(secret_dict)
-                payload["secrets"] = self._encrypt_secrets(secret_text=secret_text, recipients=recipients)
-
-        if payload:
-            r = self.put(f"/resources/{resource_id}.json", payload, return_response_object=True)
-            return r
-
+    # User API
     def describe_user(self, username: str) -> PassboltUserTuple:
-        """
-        Fetch a single user using its username via the read-index endpoint. First search the user using the username.
-        Return a PassboltUserTuple if a user with the exact username provided was found. 
-        Throw PassboltUserNotFoundError instead.
-
-        API Reference : https://help.passbolt.com/api/users/read-index
-        """
-        response = self.get(f"/users.json", params={f"filter[search]": username})
-        found_user = [user for user in response["body"] if user["username"] == username]
-        
-        if len(found_user) == 1:
-            return constructor(PassboltUserTuple)(found_user[0])
-        else:
-            raise PassboltUserNotFoundError(f"User {username} not found")
+        return PassboltUsersAPI.describe_user(self, username)
         
     def describe_user_by_id(self, user_id: PassboltUserIdType) -> PassboltUserTuple:
-        """
-        Fetch a single user using its id.
-        Return a PassboltUserTuple if a user was found. Throw PassboltUserNotFoundError instead.
-
-        API Reference : https://help.passbolt.com/api/users/read
-        """
-        response = self.get(f"/users/{user_id}.json")
-        found_user = response["body"]
-        
-        if found_user:
-            return constructor(PassboltUserTuple)(found_user)
-        else:
-            raise PassboltUserNotFoundError(f"User id {user_id} not found")
-
-    def describe_group(self, group_name: str):
-        """
-        Fetch a single group using its name via the read-index endpoint. First list all the groups.
-        Return a PassboltGroupTuple if a group with the exact name provided was found. 
-        Throw PassboltUserNotFoundError instead.
-        """
-        response = self.get(f"/groups.json")
-        found_group = [group for group in response["body"] if group["name"] == group_name]
-        
-        if len(found_group) == 1:
-            return constructor(PassboltGroupTuple)(found_group[0])
-        else:
-            raise PassboltGroupNotFoundError(f"Group {group_name} not found")
-        
-    def describe_group_by_id(self, group_id: PassboltGroupIdType) -> PassboltGroupTuple:
-        """
-        Fetch a single group using its id.
-        Return a PassboltGroupTuple if the group was found. Throw PassboltUserNotFoundError instead.
-        """
-
-        response = self.get(f"/groups/{group_id}.json", params={"contain[groups_users]": 1})
-        found_group = response["body"]
-        
-        if found_group:
-            return constructor(PassboltGroupTuple)(found_group)
-        else:
-            raise PassboltGroupNotFoundError(f"Group id {group_id} not found")
-    
-    def create_group(self, group_name:str, group_mananger: str) -> PassboltGroupTuple:
-        """
-        Create a group in Passbolt with a user as group manager.
-        Return a PassboltGroupTuple if the group was successfully created.
-
-        API Reference : https://help.passbolt.com/api/groups/create
-        """
-        manager = self.describe_user(group_mananger)
-
-        response = self.post("/groups.json", 
-                             {
-                                 "name": group_name,
-                                 "groups_users": [
-                                        {
-                                            "user_id": manager.id,
-                                            "is_admin": True
-                                        }
-                                 ]
-                             }, return_response_object=True)
-
-        response = response.json()
-        return constructor(PassboltGroupTuple)(response["body"])
+        return PassboltUsersAPI.describe_user_by_id(self, user_id)
 
     def create_user(self, username:str, first_name: str, last_name: str) -> PassboltUserTuple:
-        """
-        Create a user in Passbolt. Return a PassboltUserTuple if the user was sucessfully created
-
-        API Reference : https://help.passbolt.com/api/users/create
-        """
-
-        response = self.post("/users.json", 
-                             {
-                                 "username": username,
-                                 "profile": {
-                                     "first_name": first_name,
-                                     "last_name": last_name
-                                 }
-                            }, return_response_object=True)
-
-        response = response.json()
-        return constructor(PassboltUserTuple)(response["body"])
+        return PassboltUsersAPI.create_user(self, username, first_name, last_name)
 
     def add_user_to_group(self, user_id: PassboltUserIdType, group_id: PassboltGroupIdType) -> PassboltGroupTuple:
-        """
-        Add user to group. User must be active.
-        """
-
-        # Fetch group
-        group = self.describe_group_by_id(group_id=group_id)
-
-        # Fetch user
-        user = self.describe_user_by_id(user_id = user_id)
-
-        if not user.active:
-            raise PassboltUserNotActiveError(f"User {user.username} id {user.id} is inactive : Cannot be added to a grouup")
-            
-        # Add user in group
-        user_list = [{
-                "user_id": user.id,
-                "is_admin": False
-            }]
-
-        group_payload =  { "name": group.name, "groups_users": user_list}
-
-        # Update group in API
-        response = self.put(f"/groups/{ group.id }.json", group_payload, return_response_object=True)
-
-        response = response.json()
-        return constructor(PassboltGroupTuple)(response["body"])
+        return PassboltUsersAPI.add_user_to_group(self, user_id, group_id)
     
     def remove_user_to_group(self, user_id: PassboltUserIdType, group_id: PassboltGroupIdType) -> PassboltGroupTuple:
-        """
-        Remove user from group
-        """
-
-        # Fetch group
-        group = self.describe_group_by_id(group_id=group_id)
-
-        # Fetch user
-        user = self.describe_user_by_id(user_id = user_id)
-
-        # Add user in group
-        group.groups_users.append(
-            {
-                "user_id": user.id,
-                "delete": True
-            }
-        )
-
-        # Update group in API
-        response = self.put(f"/groups/{ group.id }.json", group, return_response_object=True)
-
-        response = response.json()
-        return constructor(PassboltGroupTuple)(response["body"])
+        return PassboltUsersAPI.remove_user_to_group(self, user_id, group_id)
