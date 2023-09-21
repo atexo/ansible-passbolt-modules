@@ -110,11 +110,13 @@ def run_module():
     module_args = dict(
         passbolt_server=dict(type='str', required=True),
         passbolt_admin_user_fingerprint=dict(type='str', required=True),
-        passbolt_admin_user_passphrase=dict(type='str', required=True),
-        passbolt_admin_user_public_key_file=dict(type='str', required=True),
-        passbolt_admin_user_private_key_file=dict(type='str', required=True),
+        passbolt_admin_user_passphrase=dict(type='str', required=True, no_log=True),
+        passbolt_admin_user_public_key_file=dict(type='str', required=True, no_log=True),
+        passbolt_admin_user_private_key_file=dict(type='str', required=True, no_log=True),
         name=dict(type='str', required=True),
-        content=dict(type='str', required=True),
+        username=dict(type='str', required=True),
+        password=dict(type='str', required=True, no_log=True),
+        uri=dict(type='str', required=False, default=None),
         folder_id=dict(type='str', required=False, default=None),
         state=dict(type='str', required=True),
     )
@@ -145,39 +147,48 @@ def run_module():
     if module.check_mode:
         module.exit_json(**result)
 
-    # manipulate or modify the state as needed (this is going to be the
-    # part where your module will do what it needs to do)
-    result['original_message'] = module.params['name']
-    result['message'] = 'goodbye'
-
-
     # prepare configuration dictionary
     config = {
-        "SERVER": module.params['passbolt_server'],
-        "USER_FINGERPRINT": module.params['passbolt_admin_user_fingerprint'],
-        "PASSPHRASE": module.params['passbolt_admin_user_passphrase'],
-        "USER_PUBLIC_KEY_FILE": module.params['passbolt_admin_user_public_key_file'],
-        "USER_PRIVATE_KEY_FILE": module.params['passbolt_admin_user_private_key_file'],
+        "PASSBOLT": {
+            "SERVER": module.params['passbolt_server'],
+            "USER_FINGERPRINT": module.params['passbolt_admin_user_fingerprint'],
+            "PASSPHRASE": module.params['passbolt_admin_user_passphrase'],
+            "USER_PUBLIC_KEY_FILE": module.params['passbolt_admin_user_public_key_file'],
+            "USER_PRIVATE_KEY_FILE": module.params['passbolt_admin_user_private_key_file'],
+        }
     }
 
     with passboltapi.PassboltAPI(config=config, new_keys=True) as passbolt:
       
-      # handle resource creation or update
-      if module.params['state'] == 'present':
-        print('Try to get resource in passbolt. Create it if found, or update it.')
-      elif module.params['state'] == 'absent':
-        print('Try to get resource in passbolt. Delete it if found.')
+        passbolt.import_public_keys()
+
+        # handle resource creation or update
+        if module.params['state'] == 'present':
+
+            new_resource = passbolt.create_resource(
+                name=module.params['name'],
+                username=module.params['username'],
+                password=module.params['password'],
+                uri=module.params['uri'],
+                folder_id=module.params['folder_id']
+            )
+
+
+        elif module.params['state'] == 'absent':
+            print('Try to get resource in passbolt. Delete it if found.')
+
+
 
     # use whatever logic you need to determine whether or not this module
     # made any modifications to your target
-    if module.params['new']:
-        result['changed'] = True
+    # if module.params['new']:
+    #     result['changed'] = True
 
     # during the execution of the module, if there is an exception or a
     # conditional state that effectively causes a failure, run
     # AnsibleModule.fail_json() to pass in the message and the result
-    if module.params['name'] == 'fail me':
-        module.fail_json(msg='You requested this to fail', **result)
+    # if module.params['name'] == 'fail me':
+    #     module.fail_json(msg='You requested this to fail', **result)
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results

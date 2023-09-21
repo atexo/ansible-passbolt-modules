@@ -82,14 +82,9 @@ class APIClient:
 
         self.server_url = self.config["PASSBOLT"]["SERVER"].rstrip("/")
         self.user_fingerprint = self.config["PASSBOLT"]["USER_FINGERPRINT"].upper().replace(" ", "")
-        self.gpg = gnupg.GPG()
 
-        if platform.system() == "Darwin":
-            gpg_binary = '/usr/local/bin/GPG'
-            self.gpg = gnupg.GPG(binary=gpg_binary)
-        else:
-            self.gpg = gnupg.GPG()
-            
+        self.gpg = gnupg.GPG()
+        
         if delete_old_keys:
             self._delete_old_keys()
         if new_keys:
@@ -98,6 +93,7 @@ class APIClient:
             self.gpg_fingerprint = [i for i in self.gpg.list_keys() if i["fingerprint"] == self.user_fingerprint][0][
                 "fingerprint"
             ]
+
         except IndexError:
             raise Exception("GPG public key could not be found. Check: gpg --list-keys")
 
