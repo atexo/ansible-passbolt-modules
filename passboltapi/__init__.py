@@ -340,6 +340,9 @@ class PassboltAPI(APIClient):
         return PassboltFoldersAPI.describe_folder(self, folder_id)
 
     # Resource API
+    def find_one_by_name(self, resource_name: str, folder_id: Optional[PassboltFolderIdType] = None):
+        return PassboltResourcesAPI.find_one_by_name(self, resource_name, folder_id)
+
     def read_resource(self, resource_id: PassboltResourceIdType) -> PassboltResourceTuple:
         return PassboltResourcesAPI.read_resource(self, resource_id)
 

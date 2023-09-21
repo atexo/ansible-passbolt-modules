@@ -32,7 +32,24 @@ from passboltapi.schema import (
 class PassboltValidationError(Exception):
     pass
 
+
+class PassboltResourceNotFoundError(Exception):
+    pass
+
+
 # Methods
+def find_one_by_name(self, resource_name: str, folder_id: Optional[PassboltFolderIdType] = None):
+    """
+    Find one resource using its name and optionnaly its parent folder id. 
+
+    https://help.passbolt.com/api/resources/read-index
+    """
+
+    response = self.get(f"/resources.json", params={f"contain[name]": resource_name})
+    results_count = len(response["body"])
+    
+    print("Results : ", results_count)
+    
 def read_resource(self, resource_id: PassboltResourceIdType) -> PassboltResourceTuple:
     response = self.get(f"/resources/{resource_id}.json", return_response_object=True)
     response = response.json()["body"]
