@@ -5,6 +5,7 @@ import urllib.parse
 from typing import List, Mapping, Optional, Tuple, Union
 
 import gnupg
+import platform
 import requests
 
 from passboltapi.schema import (
@@ -82,6 +83,13 @@ class APIClient:
         self.server_url = self.config["PASSBOLT"]["SERVER"].rstrip("/")
         self.user_fingerprint = self.config["PASSBOLT"]["USER_FINGERPRINT"].upper().replace(" ", "")
         self.gpg = gnupg.GPG()
+
+        if platform.system() == "Darwin":
+            gpg_binary = '/usr/local/bin/GPG'
+            self.gpg = gnupg.GPG(binary=gpg_binary)
+        else:
+            self.gpg = gnupg.GPG()
+            
         if delete_old_keys:
             self._delete_old_keys()
         if new_keys:
