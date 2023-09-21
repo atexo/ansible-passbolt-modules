@@ -100,6 +100,9 @@ message:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
+import sys
+sys.path.append("../library")
+
 import passboltapi
 
 def run_module():
