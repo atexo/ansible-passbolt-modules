@@ -117,7 +117,7 @@ def run_module():
         username=dict(type='str', required=True),
         password=dict(type='str', required=True, no_log=True),
         uri=dict(type='str', required=False, default=None),
-        folder_id=dict(type='str', required=False, default=None),
+        folder_name=dict(type='str', required=False, default=None),
         state=dict(type='str', required=True),
     )
 
@@ -159,7 +159,8 @@ def run_module():
     }
 
     with passboltapi.PassboltAPI(config=config, new_keys=True) as passbolt:
-      
+
+        # initialize users keys
         passbolt.import_public_keys()
 
         # handle resource creation or update

@@ -1,8 +1,9 @@
 # Library Imports
 from enum import Enum
-from typing import List, Mapping, NamedTuple, Optional, Union
-
+from typing import List, Mapping, NamedTuple, Optional, Union, Tuple, TypeVar, Generic
 from typing_extensions import TypeAlias
+
+T = TypeVar('T')
 
 try:
     from typing import Literal
@@ -81,6 +82,13 @@ class PassboltUserTuple(NamedTuple):
     gpgkey: Optional[PassboltOpenPgpKeyTuple] = None
 
 
+class PassboltCreateUserTuple(NamedTuple):
+    username: str
+    first_name: str = None
+    last_name: str = None
+    groups: [str] = None
+
+
 class PassboltResourceTuple(NamedTuple):
     id: PassboltResourceIdType
     created: PassboltDateTimeType
@@ -93,11 +101,20 @@ class PassboltResourceTuple(NamedTuple):
     uri: str
     username: str
     resource_type_id: PassboltResourceIdType
-    folder_parent_id: PassboltFolderIdType
+    parent_folder_id: PassboltFolderIdType = None
     creator: Union[None, PassboltUserTuple] = None
     favorite: Union[None, PassboltFavoriteDetailsType] = None
     modifier: Union[None, PassboltUserTuple] = None
     permission: Union[PassboltPermissionTuple] = None
+
+
+class PassboltCreateResourceTuple(NamedTuple):
+    name: str
+    password: str
+    username: str = ""
+    description: str = None
+    uri: str = None
+    folder: str = None
 
 
 class PassboltResourceTypeTuple(NamedTuple):
@@ -117,9 +134,9 @@ class PassboltFolderTuple(NamedTuple):
     modified: PassboltDateTimeType
     created_by: PassboltUserIdType
     modified_by: PassboltUserIdType
-    folder_parent_id: PassboltFolderIdType
     personal: bool
     permissions: List[PassboltPermissionTuple] = []
+    parent_folder_id: PassboltFolderIdType = None
 
 
 class PassboltGroupTuple(NamedTuple):
@@ -133,24 +150,19 @@ class PassboltGroupTuple(NamedTuple):
     groups_users: List[dict] = []
 
 
-AllPassboltTupleTypes = Union[
-    PassboltSecretTuple,
-    PassboltPermissionTuple,
-    PassboltResourceTuple,
-    PassboltFolderTuple,
-    PassboltGroupTuple,
-    PassboltUserTuple,
-    PassboltOpenPgpKeyTuple,
-]
+class PassboltReturnTuple(Generic[T]):
+    data: T
+    created: bool
+    modified: bool
 
 
 def constructor(
-    _namedtuple: AllPassboltTupleTypes,
-    renamed_fields: Union[None, dict] = None,
-    filter_fields: bool = True,
-    subconstructors: Union[None, dict] = None,
+        _namedtuple: any,
+        renamed_fields: Union[None, dict] = None,
+        filter_fields: bool = True,
+        subconstructors: Union[None, dict] = None,
 ):
-    def namedtuple_constructor(data: Union[Mapping, List[Mapping]]) -> Optional[List[AllPassboltTupleTypes]]:
+    def namedtuple_constructor(data: Union[Mapping, List[Mapping]]) -> Optional[List[any]]:
         """Returns a namedtuple constructor function that can --
         1. Ingest dictionaries or list of dictionaries directly
         2. Renames field names from dict -> namedtuple
@@ -203,5 +215,6 @@ def constructor(
         if is_singleton:
             return _namedtuple(**data[0])
         return [_namedtuple(**datum) for datum in data]
+
 
     return namedtuple_constructor

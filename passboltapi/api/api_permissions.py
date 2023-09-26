@@ -1,8 +1,4 @@
-# Secrets
-#
-# Secret endpoints are used to manage secrets on a Resource.
-# 
-# https://help.passbolt.com/api/folders
+# Permissions
 
 # Imports
 from typing import List, Mapping, Optional, Tuple, Union
