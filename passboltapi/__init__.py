@@ -367,7 +367,8 @@ class PassboltAPI(APIClient):
                     description=resource.description,
                     uri=resource.uri,
                     password=resource.password,
-                    folder_id=folder.id
+                    folder_id=folder.id,
+                    groups=resource.groups
                 )
 
                 return created_resource
@@ -395,7 +396,8 @@ class PassboltAPI(APIClient):
                     username=resource.username,
                     description=resource.description,
                     uri=resource.uri,
-                    password=resource.password
+                    password=resource.password,
+                    groups=resource.groups
                 )
 
                 return created_resource
@@ -458,3 +460,10 @@ class PassboltAPI(APIClient):
                     pass
 
         return passbolt_user_api.get_by_id(api=self, user_id=user.id), modified
+
+
+    def delete_user(self, username:str):
+        """
+        Find and delete a user in Passbolt
+        """
+

@@ -3,12 +3,14 @@
 # https://help.passbolt.com/api/permissions
 from typing import Mapping, Optional, List, Tuple
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from passboltapi import APIClient, PassboltError
 
 import json
-
+import pprint
 import passboltapi.api.api_folders as passbolt_folder_api
+import passboltapi.api.api_groups as passbolt_group_api
 import passboltapi.api.api_users as passbolt_user_api
 import passboltapi.api.api_resources_type as passbolt_resource_type_api
 
@@ -20,7 +22,7 @@ from passboltapi.schema import (
     PassboltResourceTypeIdType,
     PassboltUserIdType,
     PassboltUserTuple,
-    constructor, PassboltSecretTuple, PassboltResourceTypeTuple, PassboltGroupIdType,
+    constructor, PassboltSecretTuple, PassboltResourceTypeTuple, PassboltFolderTuple, PassboltGroupTuple,
 )
 
 
@@ -39,7 +41,7 @@ class PassboltResourceNotFoundError(Exception):
 
 def _encrypt_secrets(api: "APIClient", secret_text: str, recipients: List[PassboltUserTuple]) -> List[Mapping]:
     return [
-        {"user_id": user.id, "data": api.encrypt(secret_text, user.gpgkey.fingerprint)} for user in recipients
+        {"user_id": user.id, "data": api.encrypt(secret_text, user.gpgkey["fingerprint"])} for user in recipients
     ]
 
 
@@ -62,7 +64,6 @@ def _json_load_secret(api: "APIClient", secret: PassboltSecretTuple) -> Tuple[st
 
 
 def _get_secret_type(api: "APIClient", resource_type_id: PassboltResourceTypeIdType) -> PassboltResourceType:
-
     resource_type: PassboltResourceTypeTuple = passbolt_resource_type_api.get_by_id(
         api=api, resource_type_id=resource_type_id)
 
@@ -102,14 +103,16 @@ def create(
         username: str = "",
         description: str = "",
         uri: str = "",
+        groups: [str] = None,
         resource_type_id: Optional[PassboltResourceTypeIdType] = None,
         folder_id: Optional[PassboltFolderIdType] = None,
 ):
     """
     Creates a new resource on passbolt and shares it with the provided folder recipients.
-
     https://help.passbolt.com/api/resources/create
     """
+    if groups is None:
+        groups = []
     if not name:
         raise PassboltValidationError(f"Name cannot be None or empty -- {name}!")
     if not password:
@@ -128,43 +131,34 @@ def create(
         return_response_object=True,
     )
     resource = constructor(PassboltResourceTuple)(r_create.json()["body"])
-    if folder_id:
 
+    if folder_id:
         # Get folder
         folder = passbolt_folder_api.get_by_id(api=api, folder_id=folder_id)
 
-        # Get users with access to folder
-        users_list = passbolt_user_api.list_users_with_folder_access(api=api, folder_id=folder_id)
-
-        lookup_users: Mapping[PassboltUserIdType, PassboltUserTuple] = {user.id: user for user in users_list}
-        self_user_id = [user.id for user in users_list if api.user_fingerprint == user.gpgkey.fingerprint]
-
-        if self_user_id:
-            self_user_id = self_user_id[0]
-        else:
-            raise ValueError("User not in passbolt")
-
-        # simulate sharing with folder perms
-        permissions = [
-            {
-                "is_new": True,
-                **{k: v for k, v in perm._asdict().items() if k != "id"},
-            }
-            for perm in folder.permissions
-            if (perm.aro_foreign_key != self_user_id)
-        ]
-        share_payload = {
-            "permissions": permissions,
-            "secrets": _encrypt_secrets(api=api, secret_text=password, recipients=lookup_users.values()),
-        }
-
-        # simulate sharing with folder perms
-        r_simulate = api.post(
-            f"/share/simulate/resource/{resource.id}.json", share_payload, return_response_object=True
-        )
-        r_share = api.put(f"/share/resource/{resource.id}.json", share_payload, return_response_object=True)
-
+        # Move resource
         move_resource_to_folder(api=api, resource_id=resource.id, folder_id=folder_id)
+
+    users_list = []
+    groups_list = []
+
+    for group_name in groups:
+        try:
+            group: PassboltGroupTuple = passbolt_group_api.get_by_name(api=api, group_name=group_name)
+            groups_list.append(group)
+            users_list.extend(group.groups_users)
+        except passbolt_group_api.PassboltGroupNotFoundError:
+            pass
+
+    # Update resource data
+    resource = get_by_id(api=api, resource_id=resource.id)
+
+    # Convert user list to actual user tuple
+    users_list = [passbolt_user_api.get_by_id(api=api, user_id=user["user_id"]) for user in users_list]
+
+    # Share resource
+    share_resource_with_users(api=api, resource=resource, password=password, users_list=users_list,
+                              groups_list=groups_list)
 
     return resource
 
@@ -177,6 +171,8 @@ def get_by_id(api: "APIClient", resource_id: PassboltResourceIdType) -> Passbolt
     """
     response = api.get(f"/resources/{resource_id}.json", return_response_object=True)
     response = response.json()["body"]
+    print(response)
+
     return constructor(PassboltResourceTuple)(response)
 
 
@@ -278,6 +274,54 @@ def update_resource(
     if payload:
         r = api.put(f"/resources/{resource_id}.json", payload, return_response_object=True)
         return r
+
+
+def share_resource_with_users(
+        api: "APIClient",
+        resource: PassboltResourceTuple,
+        password: str,
+        users_list: [PassboltUserTuple],
+        groups_list: [PassboltGroupTuple]) -> None:
+    """
+    Share a resource with a specified list of users
+    """
+    lookup_users: Mapping[PassboltUserIdType, PassboltUserTuple] = {user.id: user for user in users_list}
+    self_user_id = [user.id for user in users_list if api.user_fingerprint == user.gpgkey["fingerprint"]]
+
+    if self_user_id:
+        self_user_id = self_user_id[0]
+    else:
+        raise ValueError("User not in passbolt")
+
+    # Cannot share root resource
+    if resource.folder_parent_id:
+        # Get resource folder
+        folder = passbolt_folder_api.get_by_id(api=api, folder_id=resource.folder_parent_id)
+    else:
+        return
+
+    # Simulate sharing with folder permissions
+    permissions = [
+        {
+            "is_new": True,
+            **{k: v for k, v in perm._asdict().items() if k != "id"},
+        }
+        for perm in folder.permissions if perm.aro == "Group" and
+        perm.aro_foreign_key in [group.id for group in groups_list]
+
+        if (perm.aro_foreign_key != self_user_id)
+    ]
+
+    share_payload = {
+        "permissions": permissions,
+        "secrets": _encrypt_secrets(api=api, secret_text=password, recipients=lookup_users.values()),
+    }
+
+    # Simulate sharing with folder perms
+    r_simulate = api.post(
+        f"/share/simulate/resource/{resource.id}.json", share_payload, return_response_object=True
+    )
+    r_share = api.put(f"/share/resource/{resource.id}.json", share_payload, return_response_object=True)
 
 
 def delete_by_id(api: "APIClient", resource_id: PassboltResourceIdType) -> None:

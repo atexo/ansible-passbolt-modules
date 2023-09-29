@@ -101,7 +101,7 @@ class PassboltResourceTuple(NamedTuple):
     uri: str
     username: str
     resource_type_id: PassboltResourceIdType
-    parent_folder_id: PassboltFolderIdType = None
+    folder_parent_id: PassboltFolderIdType = None
     creator: Union[None, PassboltUserTuple] = None
     favorite: Union[None, PassboltFavoriteDetailsType] = None
     modifier: Union[None, PassboltUserTuple] = None
@@ -115,6 +115,7 @@ class PassboltCreateResourceTuple(NamedTuple):
     description: str = None
     uri: str = None
     folder: str = None
+    groups: [str] = None
 
 
 class PassboltResourceTypeTuple(NamedTuple):

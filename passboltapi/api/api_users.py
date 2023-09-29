@@ -125,9 +125,12 @@ def list_users(
 
 
 def list_users_with_folder_access(api: "APIClient", folder_id: PassboltFolderIdType) -> List[PassboltUserTuple]:
+
     folder_tuple = passbolt_folder_api.get_by_id(api=api, folder_id=folder_id)
+
     # resolve users
     user_ids = set()
+
     # resolve users from groups
     for perm in folder_tuple.permissions:
         if perm.aro == "Group":
@@ -136,6 +139,7 @@ def list_users_with_folder_access(api: "APIClient", folder_id: PassboltFolderIdT
                 user_ids.add(group_user["user_id"])
         elif perm.aro == "User":
             user_ids.add(perm.aro_foreign_key)
+
     return [user for user in list_users(api=api) if user.id in user_ids]
 
 
