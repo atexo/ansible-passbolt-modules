@@ -284,13 +284,15 @@ def share_resource_with_users(
     Share a resource with a specified list of users
     """
 
+    if len(users_list) == 0:
+        return
+
     lookup_users: Mapping[PassboltUserIdType, PassboltUserTuple] = {user.id: user for user in users_list}
     self_user_id = [user.id for user in users_list if api.user_fingerprint == user.gpgkey["fingerprint"]]
 
     if self_user_id:
         self_user_id = self_user_id[0]
     else:
-        print("Could not find user in this list")
         raise ValueError("User not in passbolt")
 
     # Cannot share root resource
@@ -316,6 +318,8 @@ def share_resource_with_users(
         "permissions": permissions,
         "secrets": _encrypt_secrets(api=api, secret_text=password, recipients=lookup_users.values()),
     }
+
+    print(json.dumps(share_payload, indent=4))
 
     # Simulate sharing with folder perms
     r_simulate = api.post(
