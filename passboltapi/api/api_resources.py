@@ -175,7 +175,7 @@ def get_by_id(api: "APIClient", resource_id: PassboltResourceIdType) -> Passbolt
 
 
 def get_by_name(api: "APIClient", name: str,
-                parent_folder_id: Optional[PassboltFolderIdType] = None) -> PassboltResourceTuple:
+                folder_parent_id: Optional[PassboltFolderIdType] = None) -> PassboltResourceTuple:
     """
     Read a resource using the resource name. API does not provide search endpoint for resource, so we fetch all
     resources and filter them locally.
@@ -185,22 +185,22 @@ def get_by_name(api: "APIClient", name: str,
     response = api.get(f"/resources.json")
     resources_array = [constructor(PassboltResourceTuple)(resource) for resource in response["body"]]
 
-    if parent_folder_id:
+    if folder_parent_id:
         resources_filtered = [resource for resource in resources_array if resource.name == name and
-                              resource.parent_folder_id == parent_folder_id]
+                              resource.folder_parent_id == folder_parent_id]
     else:
         resources_filtered = [resource for resource in resources_array if resource.name == name]
 
     if len(resources_filtered) == 1:
         return resources_filtered[0]
     elif len(resources_filtered) == 0:
-        if parent_folder_id:
-            raise PassboltResourceNotFoundError(f"No resource found for {name} in folder {parent_folder_id}")
+        if folder_parent_id:
+            raise PassboltResourceNotFoundError(f"No resource found for {name} in folder {folder_parent_id}")
         else:
             raise PassboltResourceNotFoundError(f"No resource found for {name}")
     else:
-        if parent_folder_id:
-            raise PassboltResourceError(f"More than one resource found for {name} in folder {parent_folder_id}")
+        if folder_parent_id:
+            raise PassboltResourceError(f"More than one resource found for {name} in folder {folder_parent_id}")
         else:
             raise PassboltResourceError(f"More than one resource found for {name}")
 
@@ -313,6 +313,9 @@ def share_resource_with_users(
 
         if (perm.aro_foreign_key != self_user_id)
     ]
+
+    if len(permissions) == 0:
+        return
 
     share_payload = {
         "permissions": permissions,

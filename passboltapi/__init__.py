@@ -296,31 +296,34 @@ class PassboltAPI(APIClient):
 
     # Folder API
 
+
     def create_or_get_folder(self, name: str,
-                             parent_folder_id: PassboltFolderIdType = None) -> PassboltOperationResultTuple:
+                             parent_folder_name: str = None) -> PassboltOperationResultTuple:
         """
-        Create a folder if not exist
+        Create a folder if not exist. Parent folder can be set using the parent folder name.
         """
 
         result_tuple = PassboltOperationResultTuple(None, False)
 
+        if parent_folder_name:
+            parent_folder: PassboltFolderTuple = passbolt_folder_api.get_by_name(api=self, name=parent_folder_name)
+            folder_parent_id = parent_folder.id
+        else:
+            parent_folder = None
+            folder_parent_id = None
+
         try:
-            if parent_folder_id:
-                result_tuple.data = passbolt_folder_api.get_by_name(api=self, name=name,
-                                                                    parent_folder_id=parent_folder_id)
-            else:
-                result_tuple.data = passbolt_folder_api.get_by_name(api=self, name=name)
+            result_tuple.data = passbolt_folder_api.get_by_name(api=self, name=name, folder_parent_id=folder_parent_id)
         except passbolt_folder_api.PassboltFolderNotFoundError:
+            print(f"Folder %s not found in folder %s - %s"%(name, parent_folder_name, folder_parent_id))
             result_tuple.changed = True
-            if parent_folder_id:
-                result_tuple.data = passbolt_folder_api.create(api=self, name=name, parent_folder_id=parent_folder_id)
-            else:
-                result_tuple.data = passbolt_folder_api.create(api=self, name=name)
+            result_tuple.data = passbolt_folder_api.create(api=self, name=name, folder_parent_id=folder_parent_id)
 
         return result_tuple
 
 
     # Group API
+
 
     def create_or_get_group(self, group_name: str) -> tuple[PassboltGroupTuple, bool]:
         """
@@ -350,85 +353,48 @@ class PassboltAPI(APIClient):
 
         result_tuple = PassboltOperationResultTuple(None, False)
 
-        if resource.folder:
-            folder_result_tuple = self.create_or_get_folder(name=resource.folder)
-            folder: PassboltFolderTuple = folder_result_tuple.data
-            try:
-                existing_resource = passbolt_resource_api.get_by_name(api=self, name=resource.name)
+        folder_result_tuple = self.create_or_get_folder(name=resource.folder)
+        folder: PassboltFolderTuple = folder_result_tuple.data
 
-                passbolt_resource_api.move_resource_to_folder(
-                    api=self, resource_id=existing_resource.id, folder_id=folder.id)
+        try:
+            existing_resource = passbolt_resource_api.get_by_name(api=self, name=resource.name)
 
-                updated_resource: PassboltResourceTuple = passbolt_resource_api.update_resource(
-                    api=self,
-                    resource_id=existing_resource.id,
-                    name=resource.name,
-                    username=resource.username,
-                    description=resource.description,
-                    uri=resource.uri,
-                    password=resource.password
-                )
+            passbolt_resource_api.move_resource_to_folder(
+                api=self, resource_id=existing_resource.id, folder_id=folder.id)
 
-                # Compare existing and updated resource
-                result_tuple.changed = resource.name == updated_resource.name and \
-                                       resource.description == updated_resource.description and \
-                                       resource.uri == updated_resource.uri
+            updated_resource: PassboltResourceTuple = passbolt_resource_api.update_resource(
+                api=self,
+                resource_id=existing_resource.id,
+                name=resource.name,
+                username=resource.username,
+                description=resource.description,
+                uri=resource.uri,
+                password=resource.password
+            )
 
-                result_tuple.data = updated_resource
+            # Compare existing and updated resource
+            result_tuple.changed = resource.name == updated_resource.name and \
+                                   resource.description == updated_resource.description and \
+                                   resource.uri == updated_resource.uri
 
-            except passbolt_resource_api.PassboltResourceNotFoundError:
+            result_tuple.data = updated_resource
 
-                result_tuple.changed = True
+        except passbolt_resource_api.PassboltResourceNotFoundError:
 
-                created_resource = passbolt_resource_api.create(
-                    api=self,
-                    name=resource.name,
-                    username=resource.username,
-                    description=resource.description,
-                    uri=resource.uri,
-                    password=resource.password,
-                    folder_id=folder.id,
-                    groups=resource.groups
-                )
+            result_tuple.changed = True
 
-                result_tuple.data = created_resource
+            created_resource = passbolt_resource_api.create(
+                api=self,
+                name=resource.name,
+                username=resource.username,
+                description=resource.description,
+                uri=resource.uri,
+                password=resource.password,
+                folder_id=folder.id,
+                groups=resource.groups
+            )
 
-        else:
-            try:
-                existing_resource = passbolt_resource_api.get_by_name(api=self, name=resource.name)
-
-                updated_resource = passbolt_resource_api.update_resource(
-                    api=self,
-                    resource_id=existing_resource.id,
-                    name=resource.name,
-                    username=resource.username,
-                    description=resource.description,
-                    uri=resource.uri,
-                    password=resource.password
-                )
-
-                # Compare existing and updated resource
-                result_tuple.changed = resource.name == updated_resource.name and \
-                                       resource.description == updated_resource.description and \
-                                       resource.uri == updated_resource.uri
-
-                result_tuple.data = updated_resource
-
-            except passbolt_resource_api.PassboltResourceNotFoundError:
-
-                result_tuple.changed = True
-
-                created_resource = passbolt_resource_api.create(
-                    api=self,
-                    name=resource.name,
-                    username=resource.username,
-                    description=resource.description,
-                    uri=resource.uri,
-                    password=resource.password,
-                    groups=resource.groups
-                )
-
-                result_tuple.data = created_resource
+            result_tuple.data = created_resource
 
         return result_tuple
 

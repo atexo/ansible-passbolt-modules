@@ -111,10 +111,10 @@ class PassboltResourceTuple(NamedTuple):
 class PassboltCreateResourceTuple(NamedTuple):
     name: str
     password: str
+    folder: str
     username: str = ""
     description: str = None
     uri: str = None
-    folder: str = None
     groups: [str] = None
 
 
@@ -137,7 +137,7 @@ class PassboltFolderTuple(NamedTuple):
     modified_by: PassboltUserIdType
     personal: bool
     permissions: List[PassboltPermissionTuple] = []
-    parent_folder_id: PassboltFolderIdType = None
+    folder_parent_id: PassboltFolderIdType = None
 
 
 class PassboltGroupTuple(NamedTuple):

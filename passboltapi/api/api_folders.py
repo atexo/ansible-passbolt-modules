@@ -36,11 +36,14 @@ class PassboltFolderError(Exception):
 
 
 # Methods
-def create(api: "APIClient", name: str, parent_folder_id: PassboltFolderIdType = None) -> PassboltFolderTuple:
+def create(api: "APIClient", name: str, folder_parent_id: PassboltFolderIdType = None) -> PassboltFolderTuple:
+    """
+    https://help.passbolt.com/api/folders/create
+    """
 
-    if parent_folder_id:
+    if folder_parent_id:
         response = api.post(
-            "/folders.json", {"name": name, "parent_folder_id": parent_folder_id}, return_response_object=True
+            "/folders.json", {"name": name, "folder_parent_id": folder_parent_id}, return_response_object=True
         )
     else:
         response = api.post(
@@ -54,11 +57,11 @@ def create(api: "APIClient", name: str, parent_folder_id: PassboltFolderIdType =
         response["body"]
     )
 
-    if parent_folder_id:
-        parent_folder = get_by_id(api=api, folder_id=parent_folder_id)
+    if folder_parent_id:
+        parent_folder = get_by_id(api=api, folder_id=folder_parent_id)
 
         # get users with access to parent folder
-        users_list = passbolt_user_api.list_users_with_folder_access(folder_id=parent_folder_id)
+        users_list = passbolt_user_api.list_users_with_folder_access(api=api, folder_id=folder_parent_id)
 
         lookup_users: Mapping[PassboltUserIdType, PassboltUserTuple] = {user.id: user for user in users_list}
         self_user_id = [user.id for user in users_list if api.user_fingerprint == user.gpgkey.fingerprint]
@@ -101,29 +104,28 @@ def get_by_id(api: "APIClient", folder_id: PassboltFolderIdType) -> PassboltFold
         raise PassboltFolderNotFoundError(f"Folder id {folder_id} not found")
 
 
-def get_by_name(api: "APIClient", name: str, parent_folder_id: PassboltFolderIdType = None) -> [PassboltFolderTuple]:
+def get_by_name(api: "APIClient", name: str, folder_parent_id: PassboltFolderIdType = None) -> [PassboltFolderTuple]:
     response = api.get(f"/folders.json", params={f"filter[search]": name})
 
     folders_array = [constructor(PassboltFolderTuple)(resource) for resource in response["body"]]
 
-    if parent_folder_id:
+    if folder_parent_id:
         folders_filtered = [resource for resource in folders_array if resource.name == name and
-                            resource.parent_folder_id == parent_folder_id]
+                            resource.folder_parent_id == folder_parent_id]
     else:
-        folders_filtered = [resource for resource in folders_array if resource.name == name and
-                            resource.parent_folder_id is None]
+        folders_filtered = [resource for resource in folders_array if resource.name == name]
 
     if len(folders_filtered) == 1:
         return folders_filtered[0]
     elif len(folders_filtered) == 0:
-        if parent_folder_id:
-            raise PassboltFolderNotFoundError(f"No folder found for {name} in folder {parent_folder_id}")
+        if folder_parent_id:
+            raise PassboltFolderNotFoundError(f"No folder found for {name} in folder {folder_parent_id}")
         else:
             raise PassboltFolderNotFoundError(f"No folder found for {name}")
     else:
-        if parent_folder_id:
-            raise PassboltFolderError(f"More than one folder found for {name} in folder {parent_folder_id}" +
-                                      f"Please make sure only one {name} folder exist in folder {parent_folder_id}")
+        if folder_parent_id:
+            raise PassboltFolderError(f"More than one folder found for {name} in folder {folder_parent_id}" + ". " +
+                                      f" Please make sure only one {name} folder exist in folder {folder_parent_id}")
         else:
-            raise PassboltFolderError(f"More than one folder found for {name}" +
+            raise PassboltFolderError(f"More than one folder found for {name}" + ". "
                                       f"Please make sure only one {name} folder exist")

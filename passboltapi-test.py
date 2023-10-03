@@ -2,18 +2,32 @@
 #
 # This file is used to test various functions of the Passbolt API, used in the ansible modules.
 from datetime import datetime
-
-import passboltapi
 from passboltapi import PassboltCreateResourceTuple
 from passboltapi.schema import PassboltCreateUserTuple
 
+import passboltapi
+import sys
+
 if __name__ == '__main__':
     with passboltapi.PassboltAPI(config_path="config.ini", new_keys=True) as passbolt:
+
         passbolt.import_public_keys()  # import user keys to allow secrets encryption
 
         now = datetime.now()  # current date and time
 
         parent_folder_name = "MY-PASSWORD-FOLDER"  # folder must exist and be unique in passbolt.
+
+        folders_hierarchy = ["top-level", "intermediate-level", "low-level"]
+
+        for i in range(len(folders_hierarchy)):
+            print("Create folder " + folders_hierarchy[i])
+            if i == 0:
+                result = passbolt.create_or_get_folder(name=folders_hierarchy[i])
+            else:
+                result = passbolt.create_or_get_folder(name=folders_hierarchy[i], parent_folder_name=folders_hierarchy[i-1])
+
+            print("Changed : " + str(result.changed))
+
 
         print("Create a user in 'ops' team if not exist, create groups if not exist, and add user to groups")
         new_user = PassboltCreateUserTuple(
@@ -41,7 +55,7 @@ if __name__ == '__main__':
             name=new_password,
             password=new_password,
             username="john-doe",
-            folder="MY-REGULAR-FOLDER",
+            folder="top-level",
             groups=["ops"]
         )
         result_3 = passbolt.create_or_update_resource(new_resource)
@@ -53,7 +67,7 @@ if __name__ == '__main__':
             name=new_password,
             password=new_password,
             username="john-doe",
-            folder="MY-REGULAR-FOLDER",
+            folder="low-level",
             groups=["all"]
         )
         result_4 = passbolt.create_or_update_resource(new_resource)
