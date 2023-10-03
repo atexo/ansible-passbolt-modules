@@ -14,6 +14,8 @@ import passboltapi.api.api_resources_type as passbolt_resource_type_api
 import passboltapi.api.api_users as passbolt_user_api
 
 from passboltapi.schema import (
+    PassboltCreateResourceTuple,
+    PassboltCreateUserTuple,
     PassboltDateTimeType,
     PassboltFavoriteDetailsType,
     PassboltFolderIdType,
@@ -29,12 +31,13 @@ from passboltapi.schema import (
     PassboltResourceType,
     PassboltResourceTypeIdType,
     PassboltResourceTypeTuple,
+    PassboltOperationResultTuple,
     PassboltRoleIdType,
     PassboltSecretIdType,
     PassboltSecretTuple,
     PassboltUserIdType,
     PassboltUserTuple,
-    constructor, PassboltCreateResourceTuple, PassboltCreateUserTuple, PassboltReturnTuple,
+    constructor,
 )
 
 # Passbolt API Functions
@@ -262,6 +265,7 @@ class PassboltAPI(APIClient):
             self, resource_or_folder_id: Union[None, PassboltResourceIdType, PassboltFolderIdType] = None,
             force_list=True
     ) -> List[PassboltUserTuple]:
+
         if resource_or_folder_id is None:
             params = {}
         else:
@@ -272,7 +276,7 @@ class PassboltAPI(APIClient):
         response = response["body"]
         users = constructor(
             PassboltUserTuple,
-            subconstructors={
+            sub_constructors={
                 "gpgkey": constructor(PassboltOpenPgpKeyTuple),
             },
         )(response)
@@ -292,25 +296,31 @@ class PassboltAPI(APIClient):
 
     # Folder API
 
-
-    def create_or_get_folder(self, name: str, parent_folder_id: PassboltFolderIdType = None) -> PassboltFolderTuple:
+    def create_or_get_folder(self, name: str,
+                             parent_folder_id: PassboltFolderIdType = None) -> PassboltOperationResultTuple:
         """
         Create a folder if not exist
         """
+
+        result_tuple = PassboltOperationResultTuple(None, False)
+
         try:
             if parent_folder_id:
-                return passbolt_folder_api.get_by_name(api=self, name=name, parent_folder_id=parent_folder_id)
+                result_tuple.data = passbolt_folder_api.get_by_name(api=self, name=name,
+                                                                    parent_folder_id=parent_folder_id)
             else:
-                return passbolt_folder_api.get_by_name(api=self, name=name)
+                result_tuple.data = passbolt_folder_api.get_by_name(api=self, name=name)
         except passbolt_folder_api.PassboltFolderNotFoundError:
+            result_tuple.changed = True
             if parent_folder_id:
-                return passbolt_folder_api.create(api=self, name=name, parent_folder_id=parent_folder_id)
+                result_tuple.data = passbolt_folder_api.create(api=self, name=name, parent_folder_id=parent_folder_id)
             else:
-                return passbolt_folder_api.create(api=self, name=name)
+                result_tuple.data = passbolt_folder_api.create(api=self, name=name)
+
+        return result_tuple
 
 
     # Group API
-
 
     def create_or_get_group(self, group_name: str) -> tuple[PassboltGroupTuple, bool]:
         """
@@ -333,21 +343,23 @@ class PassboltAPI(APIClient):
         return passbolt_resource_api.get_by_name(api=self, name=name)
 
 
-    def create_or_update_resource(self, resource: PassboltCreateResourceTuple) -> PassboltResourceTuple:
+    def create_or_update_resource(self, resource: PassboltCreateResourceTuple) -> PassboltOperationResultTuple:
         """
         Create resource if not found in Passbolt. Update it if found.
         """
 
-        if resource.folder:
-            folder = self.create_or_get_folder(name=resource.folder)
+        result_tuple = PassboltOperationResultTuple(None, False)
 
+        if resource.folder:
+            folder_result_tuple = self.create_or_get_folder(name=resource.folder)
+            folder: PassboltFolderTuple = folder_result_tuple.data
             try:
                 existing_resource = passbolt_resource_api.get_by_name(api=self, name=resource.name)
 
                 passbolt_resource_api.move_resource_to_folder(
                     api=self, resource_id=existing_resource.id, folder_id=folder.id)
 
-                updated_resource = passbolt_resource_api.update_resource(
+                updated_resource: PassboltResourceTuple = passbolt_resource_api.update_resource(
                     api=self,
                     resource_id=existing_resource.id,
                     name=resource.name,
@@ -357,9 +369,17 @@ class PassboltAPI(APIClient):
                     password=resource.password
                 )
 
-                return updated_resource
+                # Compare existing and updated resource
+                result_tuple.changed = resource.name == updated_resource.name and \
+                                       resource.description == updated_resource.description and \
+                                       resource.uri == updated_resource.uri
+
+                result_tuple.data = updated_resource
 
             except passbolt_resource_api.PassboltResourceNotFoundError:
+
+                result_tuple.changed = True
+
                 created_resource = passbolt_resource_api.create(
                     api=self,
                     name=resource.name,
@@ -371,7 +391,7 @@ class PassboltAPI(APIClient):
                     groups=resource.groups
                 )
 
-                return created_resource
+                result_tuple.data = created_resource
 
         else:
             try:
@@ -387,9 +407,17 @@ class PassboltAPI(APIClient):
                     password=resource.password
                 )
 
-                return updated_resource
+                # Compare existing and updated resource
+                result_tuple.changed = resource.name == updated_resource.name and \
+                                       resource.description == updated_resource.description and \
+                                       resource.uri == updated_resource.uri
+
+                result_tuple.data = updated_resource
 
             except passbolt_resource_api.PassboltResourceNotFoundError:
+
+                result_tuple.changed = True
+
                 created_resource = passbolt_resource_api.create(
                     api=self,
                     name=resource.name,
@@ -400,70 +428,94 @@ class PassboltAPI(APIClient):
                     groups=resource.groups
                 )
 
-                return created_resource
+                result_tuple.data = created_resource
 
-    def remove_resource_by_name(self, name: str) -> None:
+        return result_tuple
+
+
+    def remove_resource_by_name(self, name: str) -> PassboltOperationResultTuple:
         """
         Remove a single resource
         """
+
+        result_tuple = PassboltOperationResultTuple(name, False)
+
         try:
             existing_resource = passbolt_resource_api.get_by_name(api=self, name=name)
             passbolt_resource_api.delete_by_id(api=self, resource_id=existing_resource.id)
-
+            result_tuple.changed = True
         except passbolt_resource_api.PassboltResourceNotFoundError:
-            pass
+            result_tuple.changed = False
+
+        return result_tuple
 
 
     # User API
 
 
-    def create_or_update_user(self, user: PassboltCreateUserTuple) -> tuple[PassboltUserTuple, bool]:
+    def create_or_update_user(self, user: PassboltCreateUserTuple) -> PassboltOperationResultTuple:
         """
         Create user if not found in Passbolt. Update it if found.
         Note : username = email in Passbolt
         """
 
+        result_tuple = PassboltOperationResultTuple(None, False)
+
         try:
-            user_from_api = passbolt_user_api.get_by_username(api=self, username=user.username)
-            user_modified = False
-            user_created = False
+            result_tuple.data = passbolt_user_api.get_by_username(api=self, username=user.username)
+            result_tuple.changed = False
 
         except passbolt_user_api.PassboltUserNotFoundError:
-            user_from_api = passbolt_user_api.create_user(
+            result_tuple.data = passbolt_user_api.create_user(
                 api=self,
                 username=user.username,
                 first_name=user.first_name,
                 last_name=user.last_name,
             )
-            user_modified = True
-            user_created = False
+            result_tuple.changed = True
 
-        user_from_api, group_modified = self.add_user_to_groups(user=user_from_api, groups=user.groups)
+        add_user_to_groups_result = self.add_user_to_groups(user=result_tuple.data, groups=user.groups)
 
-        return user_from_api, user_modified or user_created or group_modified
+        result_tuple.data = add_user_to_groups_result.data
+        result_tuple.changed = result_tuple.changed or add_user_to_groups_result.changed
 
+        return result_tuple
 
-    def add_user_to_groups(self, user: PassboltUserTuple, groups: [str]) -> tuple[PassboltUserTuple, bool]:
+    def add_user_to_groups(self, user: PassboltUserTuple, groups: [str]) -> PassboltOperationResultTuple:
         """
         Find groups passed in groups array, and assign the user to the found groups.
         """
-        groups_array: [PassboltGroupTuple] = [self.create_or_get_group(group_name=group_name) for group_name in groups]
+        result_tuple = PassboltOperationResultTuple(user, False)
 
-        modified = False
+        groups_array: [PassboltGroupTuple] = [self.create_or_get_group(group_name=group_name) for group_name in groups]
 
         for group, created in groups_array:
             if not is_user_in_group(user, group):
                 try:
                     passbolt_user_api.add_user_to_group(api=self, user_id=user.id, group_id=group.id)
-                    modified = True
+                    result_tuple.changed = True
                 except passbolt_user_api.PassboltUserNotActiveError:
                     pass
 
-        return passbolt_user_api.get_by_id(api=self, user_id=user.id), modified
+        # Update user using API
+        result_tuple.data = passbolt_user_api.get_by_id(api=self, user_id=user.id)
+
+        return result_tuple
 
 
-    def delete_user(self, username:str):
+    def delete_user(self, username: str) -> PassboltOperationResultTuple:
         """
         Find and delete a user in Passbolt
         """
 
+        result_tuple = PassboltOperationResultTuple(username, False)
+
+        try:
+            user_from_api = passbolt_user_api.get_by_username(api=self, username=username)
+            passbolt_user_api.delete_by_id(api=self, user_id=user_from_api.id)
+            result_tuple.changed = True
+
+        except passbolt_user_api.PassboltUserNotFoundError:
+            result_tuple.changed = False
+
+        return result_tuple

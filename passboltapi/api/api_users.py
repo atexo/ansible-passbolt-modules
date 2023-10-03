@@ -115,7 +115,7 @@ def list_users(
     response = response["body"]
     users = constructor(
         PassboltUserTuple,
-        subconstructors={
+        sub_constructors={
             "gpgkey": constructor(PassboltOpenPgpKeyTuple),
         },
     )(response)

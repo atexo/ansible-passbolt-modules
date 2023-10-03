@@ -1,6 +1,6 @@
 # Library Imports
 from enum import Enum
-from typing import List, Mapping, NamedTuple, Optional, Union, Tuple, TypeVar, Generic
+from typing import List, Mapping, NamedTuple, Optional, Union, Tuple, TypeVar, Generic, Any
 from typing_extensions import TypeAlias
 
 T = TypeVar('T')
@@ -151,17 +151,23 @@ class PassboltGroupTuple(NamedTuple):
     groups_users: List[dict] = []
 
 
-class PassboltReturnTuple(Generic[T]):
-    data: T
-    created: bool
-    modified: bool
+class PassboltOperationResultTuple:
+    """
+    Describe the result of an operation, as Ansible demands it.
+    """
+    data: Any
+    changed: bool = False
+
+    def __init__(self, data, changed):
+        self.data = data
+        self.changed = changed
 
 
 def constructor(
         _namedtuple: any,
         renamed_fields: Union[None, dict] = None,
         filter_fields: bool = True,
-        subconstructors: Union[None, dict] = None,
+        sub_constructors: Union[None, dict] = None,
 ):
     def namedtuple_constructor(data: Union[Mapping, List[Mapping]]) -> Optional[List[any]]:
         """Returns a namedtuple constructor function that can --
@@ -203,10 +209,10 @@ def constructor(
             data = [{k: v for k, v in datum.items() if k in _namedtuple._fields} for datum in data]
 
         # 4. [Composition] Apply constructors like this to individual fields
-        if subconstructors:
+        if sub_constructors:
             data = [
                 {
-                    k: (subconstructors[k](v) if k in subconstructors.keys() else v)
+                    k: (sub_constructors[k](v) if k in sub_constructors.keys() else v)
                     for k, v in datum.items()
                     if k in _namedtuple._fields
                 }

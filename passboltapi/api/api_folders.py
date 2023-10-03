@@ -50,7 +50,7 @@ def create(api: "APIClient", name: str, parent_folder_id: PassboltFolderIdType =
     response = response.json()
 
     created_folder = constructor(
-        PassboltFolderTuple, subconstructors={"permissions": constructor(PassboltPermissionTuple)})(
+        PassboltFolderTuple, sub_constructors={"permissions": constructor(PassboltPermissionTuple)})(
         response["body"]
     )
 
@@ -94,7 +94,7 @@ def get_by_id(api: "APIClient", folder_id: PassboltFolderIdType) -> PassboltFold
     found_folder = res["body"]
 
     if found_folder:
-        return constructor(PassboltFolderTuple, subconstructors={"permissions": constructor(PassboltPermissionTuple)})(
+        return constructor(PassboltFolderTuple, sub_constructors={"permissions": constructor(PassboltPermissionTuple)})(
             found_folder
         )
     else:

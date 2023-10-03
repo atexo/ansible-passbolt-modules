@@ -9,30 +9,59 @@ from passboltapi.schema import PassboltCreateUserTuple
 
 if __name__ == '__main__':
     with passboltapi.PassboltAPI(config_path="config.ini", new_keys=True) as passbolt:
+        passbolt.import_public_keys()  # import user keys to allow secrets encryption
 
         now = datetime.now()  # current date and time
 
+        parent_folder_name = "MY-PASSWORD-FOLDER"  # folder must exist and be unique in passbolt.
+
+        print("Create a user in 'ops' team if not exist, create groups if not exist, and add user to groups")
+        new_user = PassboltCreateUserTuple(
+            username="alice@acme.com",
+            first_name="Alice",
+            last_name="Doe",
+            groups=["ops", "all"]
+        )
+        result_1 = passbolt.create_or_update_user(new_user)
+        print("Changed : " + str(result_1.changed))
+
+        print("Create a user 'all' team if not exist, create groups if not exist, and add user to groups")
+        new_user = PassboltCreateUserTuple(
+            username="bob@acme.com",
+            first_name="Bob",
+            last_name="Doe",
+            groups=["all"]
+        )
+        result_1 = passbolt.create_or_update_user(new_user)
+        print("Changed : " + str(result_1.changed))
+
+        print("Create a new secured passbolt for 'ops' team")
+        new_password = f"passbolt-very-secured-password@-%s" % (now.strftime("%Y-%m-%d-T%H%M%S"))
+        new_resource = PassboltCreateResourceTuple(
+            name=new_password,
+            password=new_password,
+            username="john-doe",
+            folder="MY-REGULAR-FOLDER",
+            groups=["ops"]
+        )
+        result_3 = passbolt.create_or_update_resource(new_resource)
+        print("Changed : " + str(result_3.changed))
+
+        print("Create a new password shared with 'all' team")
         new_password = f"passbolt-password@-%s" % (now.strftime("%Y-%m-%d-T%H%M%S"))
         new_resource = PassboltCreateResourceTuple(
             name=new_password,
             password=new_password,
             username="john-doe",
-            folder="SECRET-FOLDER",
-            groups=["avengers", "my-new-group-because-ca-marche"]
+            folder="MY-REGULAR-FOLDER",
+            groups=["all"]
         )
-        resource = passbolt.create_or_update_resource(new_resource)
+        result_4 = passbolt.create_or_update_resource(new_resource)
+        print("Changed : " + str(result_4.changed))
 
-        # Create a user if not exist, create groups if not exist, and add user to groups
-        new_user = PassboltCreateUserTuple(
-            username="jeanrene.robin@gmail.com",
-            first_name="Jean-René",
-            last_name="Robin",
-            groups=["avengers", "my-new-group-because-ca-marche"]
-        )
-        user, modified = passbolt.create_or_update_user(new_user)
-
-        # Delete a user
-        modified = passbolt.
+        print("Ensure user 'john-doe@acme.com' is not present")
+        result_5 = passbolt.delete_user("john-doe@acme.com")
+        print("Changed : " + str(result_5.changed))
 
         # Create a resource if not exist
 

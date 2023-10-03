@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from passboltapi import APIClient, PassboltError
 
 import json
-import pprint
 import passboltapi.api.api_folders as passbolt_folder_api
 import passboltapi.api.api_groups as passbolt_group_api
 import passboltapi.api.api_users as passbolt_user_api
@@ -171,7 +170,6 @@ def get_by_id(api: "APIClient", resource_id: PassboltResourceIdType) -> Passbolt
     """
     response = api.get(f"/resources/{resource_id}.json", return_response_object=True)
     response = response.json()["body"]
-    print(response)
 
     return constructor(PassboltResourceTuple)(response)
 
@@ -285,12 +283,14 @@ def share_resource_with_users(
     """
     Share a resource with a specified list of users
     """
+
     lookup_users: Mapping[PassboltUserIdType, PassboltUserTuple] = {user.id: user for user in users_list}
     self_user_id = [user.id for user in users_list if api.user_fingerprint == user.gpgkey["fingerprint"]]
 
     if self_user_id:
         self_user_id = self_user_id[0]
     else:
+        print("Could not find user in this list")
         raise ValueError("User not in passbolt")
 
     # Cannot share root resource
