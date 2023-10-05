@@ -9,7 +9,7 @@ DOCUMENTATION = r'''
 ---
 module: passbolt_resource
 
-short_description: Manage Passbolt Resources
+short_description: Manage Passbolt resources
 
 version_added: "1.0.0"
 

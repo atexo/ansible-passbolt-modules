@@ -7,13 +7,13 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: passbolt_user
+module: passbolt_folder
 
-short_description: Manage Passbolt users
+short_description: Manage Passbolt folders
 
 version_added: "1.0.0"
 
-description: Allows you to create, update and delete users in Passbolt.
+description: Allows you to create folders in passbolt
 
 options:
     passbolt_server:
@@ -36,36 +36,21 @@ options:
         description: Path to the private key file of the user used to exchange data with Passbolt.
         required: true
         type: str
-    username:
-        description: Email as username for the user
+    name:
+        description: Name of the folder
         required: true
         type: str
-    first_name:
-        description: User's first name
+    parent_folder_name:
+        description: Name of the parent folder
         required: true
         type: str
-    last_name:
-        description: User's last name
-        required: true
-        type: str
-    groups:
-        description: List of groups the user will be linked to. Groups will be created if they not exist.
-        required: true
-        type: str
-    state:
-        description: Define the state of the user.
-        choices:
-          - present
-          - absent
-        required: false
-        default: present
 
 author:
     - Jean-René Robin (@mabihan)
 '''
 
 EXAMPLES = r'''
-# Create a user
+# Create a folder a root level
 - name: "Create user in Passbolt"
   passbolt_user:
     passbolt_server: "{{ passbolt_server }}"
@@ -73,16 +58,10 @@ EXAMPLES = r'''
     passbolt_admin_user_passphrase: "{{ vault_passbolt_admin_user_passphrase }}"
     passbolt_admin_user_public_key_file: "{{ public_key.path }}"
     passbolt_admin_user_private_key_file: "{{ private_key.path }}"
-    username: "alice@acme.com"
-    first_name: "Alice"
-    last_name: "Doe"
-    groups:
-      - "ops"
-      - "all"
-    state: present
+    name: "test-folder"
   delegate_to: localhost
 
-# Remove a user
+# Create a folder under the "test" folder
 - name: "Create user in Passbolt"
   passbolt_user:
     passbolt_server: "{{ passbolt_server }}"
@@ -90,8 +69,8 @@ EXAMPLES = r'''
     passbolt_admin_user_passphrase: "{{ vault_passbolt_admin_user_passphrase }}"
     passbolt_admin_user_public_key_file: "{{ public_key.path }}"
     passbolt_admin_user_private_key_file: "{{ private_key.path }}"
-    username: "alice@acme.com"
-    state: absent
+    name: "sub-folder"
+    parent_folder_name: "test-folder"
   delegate_to: localhost
 '''
 
@@ -125,11 +104,8 @@ def run_module():
         passbolt_admin_user_passphrase=dict(type='str', required=True, no_log=True),
         passbolt_admin_user_public_key_file=dict(type='str', required=True, no_log=True),
         passbolt_admin_user_private_key_file=dict(type='str', required=True, no_log=True),
-        username=dict(type='str', required=True),
-        first_name=dict(type='str', required=True),
-        last_name=dict(type='str', required=True),
-        groups=dict(type='list', required=False, default=[]),
-        state=dict(type='str', required=False, default="present"),
+        name=dict(type='str', required=True),
+        parent_folder_name=dict(type='str', required=False, default=None),
     )
 
     # seed the result dict in the object
@@ -175,20 +151,10 @@ def run_module():
         passbolt.import_public_keys()
 
         # handle user creation or update
-        if module.params['state'] == 'present':
-
-            new_user = PassboltCreateUserTuple(
-                username=module.params['username'],
-                first_name=module.params['first_name'],
-                last_name=module.params['last_name'],
-                groups=module.params['groups'],
-            )
-
-            passbolt_api_result = passbolt.create_or_update_user(new_user)
-
-        elif module.params['state'] == 'absent':
-
-            passbolt_api_result = passbolt.delete_user(module.params['username'])
+        if module.params['parent_folder_name']:
+            passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'])
+        else:
+            passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'], parent_folder_name=module.params['parent_folder_name'])
 
     result['changed'] = passbolt_api_result.changed
 
