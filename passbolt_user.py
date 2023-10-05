@@ -7,13 +7,13 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: passbolt_resource
+module: passbolt_user
 
-short_description: Manage Passbolt Resources
+short_description: Manage Passbolt Users
 
 version_added: "1.0.0"
 
-description: Allows you to create, update, delete, and share passwords in Passbolt.
+description: Allows you to create, update and delete users in Passbolt.
 
 options:
     passbolt_server:
@@ -103,6 +103,8 @@ sys.path.append("../library")
 
 import passboltapi
 
+from passboltapi import PassboltCreateUserTuple
+
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
@@ -111,11 +113,10 @@ def run_module():
         passbolt_admin_user_passphrase=dict(type='str', required=True, no_log=True),
         passbolt_admin_user_public_key_file=dict(type='str', required=True, no_log=True),
         passbolt_admin_user_private_key_file=dict(type='str', required=True, no_log=True),
-        name=dict(type='str', required=True),
         username=dict(type='str', required=True),
-        password=dict(type='str', required=True, no_log=True),
-        uri=dict(type='str', required=False, default=None),
-        folder_name=dict(type='str', required=False, default=None),
+        first_name=dict(type='str', required=True),
+        last_name=dict(type='str', required=True),
+        groups=dict(type='list', required=False, default=[]),
         state=dict(type='str', required=True),
     )
 
@@ -161,35 +162,24 @@ def run_module():
         # initialize users keys
         passbolt.import_public_keys()
 
-        # handle resource creation or update
+        # handle user creation or update
         if module.params['state'] == 'present':
 
-            new_resource = passbolt.create_resource(
-                name=module.params['name'],
+            new_user = PassboltCreateUserTuple(
                 username=module.params['username'],
-                password=module.params['password'],
-                uri=module.params['uri'],
-                folder_id=module.params['folder_id']
+                first_name=module.params['first_name'],
+                last_name=module.params['last_name'],
+                groups=module.params['groups'],
             )
 
+            passbolt_api_result = passbolt.create_or_update_user(new_user)
+
         elif module.params['state'] == 'absent':
-            print('Try to get resource in passbolt. Delete it if found.')
 
+            passbolt_api_result = passbolt.delete_user(module.params['username'])
 
+    result['changed'] = passbolt_api_result.changed
 
-    # use whatever logic you need to determine whether or not this module
-    # made any modifications to your target
-    # if module.params['new']:
-    #     result['changed'] = True
-
-    # during the execution of the module, if there is an exception or a
-    # conditional state that effectively causes a failure, run
-    # AnsibleModule.fail_json() to pass in the message and the result
-    # if module.params['name'] == 'fail me':
-    #     module.fail_json(msg='You requested this to fail', **result)
-
-    # in the event of a successful module execution, you will want to
-    # simple AnsibleModule.exit_json(), passing the key/value results
     module.exit_json(**result)
 
 
