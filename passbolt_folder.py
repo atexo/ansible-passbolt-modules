@@ -50,9 +50,8 @@ author:
 '''
 
 EXAMPLES = r'''
-# Create a folder a root level
-- name: "Create user in Passbolt"
-  passbolt_user:
+- name: "Create folder in Passbolt at root level"
+  passbolt_folder:
     passbolt_server: "{{ passbolt_server }}"
     passbolt_admin_user_fingerprint: "{{ vault_passbolt_admin_user_fingerprint }}"
     passbolt_admin_user_passphrase: "{{ vault_passbolt_admin_user_passphrase }}"
@@ -61,9 +60,8 @@ EXAMPLES = r'''
     name: "test-folder"
   delegate_to: localhost
 
-# Create a folder under the "test" folder
-- name: "Create user in Passbolt"
-  passbolt_user:
+- name: "Create a folder under the 'test-folder'"
+  passbolt_folder:
     passbolt_server: "{{ passbolt_server }}"
     passbolt_admin_user_fingerprint: "{{ vault_passbolt_admin_user_fingerprint }}"
     passbolt_admin_user_passphrase: "{{ vault_passbolt_admin_user_passphrase }}"
@@ -151,10 +149,11 @@ def run_module():
         passbolt.import_public_keys()
 
         # handle user creation or update
-        if module.params['parent_folder_name']:
-            passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'])
+        if module.params['parent_folder_name'] == None:
+            passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'],
+                                                                parent_folder_name=module.params['parent_folder_name'])
         else:
-            passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'], parent_folder_name=module.params['parent_folder_name'])
+            passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'])
 
     result['changed'] = passbolt_api_result.changed
 
