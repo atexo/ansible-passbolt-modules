@@ -40,13 +40,21 @@ options:
         description: Name of the resource
         required: true
         type: str
-    content:
-        description: Content (password) of the resource
+    username:
+        description: Username of the resource
         required: true
         type: str
-    folder_id:
-        description: Identifier (UUID) of the folder where resource should be uploaded.
+    password:
+        description: Password of the resource
         required: true
+        type: 
+    uri:
+        description: URI of the resource
+        required: true
+        type: str
+    folder_name:
+        description: Name of the folder where the resource must be created.
+        required: false
         type: str
     state:
         description: Define the state of the resource.
@@ -102,6 +110,7 @@ import sys
 sys.path.append("../library")
 
 import passboltapi
+from passboltapi import PassboltCreateResourceTuple
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
@@ -164,32 +173,22 @@ def run_module():
         # handle resource creation or update
         if module.params['state'] == 'present':
 
-            new_resource = passbolt.create_resource(
+            new_resource = PassboltCreateResourceTuple(
                 name=module.params['name'],
-                username=module.params['username'],
-                password=module.params['password'],
                 uri=module.params['uri'],
-                folder_id=module.params['folder_id']
+                password=module.params['password'],
+                username=module.params['username'],
+                folder=module.params['folder'],
+                groups=module.params['groups'],
             )
+
+            passbolt_api_result = passbolt.create_or_update_resource(new_resource)
 
         elif module.params['state'] == 'absent':
             print('Try to get resource in passbolt. Delete it if found.')
 
+    result['changed'] = passbolt_api_result.changed
 
-
-    # use whatever logic you need to determine whether or not this module
-    # made any modifications to your target
-    # if module.params['new']:
-    #     result['changed'] = True
-
-    # during the execution of the module, if there is an exception or a
-    # conditional state that effectively causes a failure, run
-    # AnsibleModule.fail_json() to pass in the message and the result
-    # if module.params['name'] == 'fail me':
-    #     module.fail_json(msg='You requested this to fail', **result)
-
-    # in the event of a successful module execution, you will want to
-    # simple AnsibleModule.exit_json(), passing the key/value results
     module.exit_json(**result)
 
 
