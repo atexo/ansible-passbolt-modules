@@ -144,16 +144,11 @@ def run_module():
     }
 
     with passboltapi.PassboltAPI(config=config, new_keys=True) as passbolt:
-
         # initialize users keys
         passbolt.import_public_keys()
 
-        # handle user creation or update
-        if module.params['parent_folder_name'] == None:
-            passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'],
-                                                                parent_folder_name=module.params['parent_folder_name'])
-        else:
-            passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'])
+        passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'],
+                                                            parent_folder_name=module.params['parent_folder_name'])
 
     result['changed'] = passbolt_api_result.changed
 
