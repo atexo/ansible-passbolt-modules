@@ -109,7 +109,8 @@ def run_module():
         password=dict(type='str', required=True, no_log=True),
         uri=dict(type='str', required=False, default=None),
         folder_name=dict(type='str', required=False, default=None),
-        state=dict(type='str', required=True),
+        groups=dict(type='list', required=False, default=[]),
+        state=dict(type='str', required=False, default="present"),
     )
 
     # seed the result dict in the object
