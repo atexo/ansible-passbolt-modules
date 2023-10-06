@@ -1,11 +1,11 @@
 import configparser
-import json
 import logging
 import urllib.parse
 from typing import List, Mapping, Optional, Tuple, Union
 
 import gnupg
 import requests
+import platform
 
 import passboltapi.api.api_folders as passbolt_folder_api
 import passboltapi.api.api_groups as passbolt_group_api
@@ -77,7 +77,10 @@ class APIClient:
         self.server_url = self.config["PASSBOLT"]["SERVER"].rstrip("/")
         self.user_fingerprint = self.config["PASSBOLT"]["USER_FINGERPRINT"].upper().replace(" ", "")
 
-        self.gpg = gnupg.GPG()
+        if platform.system() == "Darwin":
+            self.gpg = gnupg.GPG(gnupghome='/path/to/home/directory')
+        else:
+            self.gpg = gnupg.GPG()
 
         if delete_old_keys:
             self._delete_old_keys()
