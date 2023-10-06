@@ -70,39 +70,23 @@ author:
 
 EXAMPLES = r'''
 # Create a resource
-- name: Test with a message
-  my_namespace.my_collection.my_test:
-    name: hello world
-
-# Read a resource
-- name: Test with a message
-  my_namespace.my_collection.my_test:
-    name: hello world
-
-# Update a resource
-- name: Test with a message and changed output
-  my_namespace.my_collection.my_test:
-    name: hello world
-    new: true
-
-# Delete a resource
-- name: Test failure of the module
-  my_namespace.my_collection.my_test:
-    name: fail me
+- name: "Create a resource in folder 'test-folder'"
+  passbolt_resource:
+    passbolt_server: "{{ passbolt_server }}"
+    passbolt_admin_user_fingerprint: "{{ vault_passbolt_admin_user_fingerprint }}"
+    passbolt_admin_user_passphrase: "{{ vault_passbolt_admin_user_passphrase }}"
+    passbolt_admin_user_public_key_file: "{{ public_key.path }}"
+    passbolt_admin_user_private_key_file: "{{ private_key.path }}"
+    name: "my-admin"
+    username: "john-doe"
+    password: "my-secret-password"
+    uri: "https://example.com"
+    folder_name: "test-folder"
+    state: "present"
+  delegate_to: localhost
 '''
 
 RETURN = r'''
-# These are examples of possible return values, and in general should use other names for return values.
-original_message:
-    description: The original name param that was passed in.
-    type: str
-    returned: always
-    sample: 'hello world'
-message:
-    description: The output message that the test module generates.
-    type: str
-    returned: always
-    sample: 'goodbye'
 '''
 
 from ansible.module_utils.basic import AnsibleModule
