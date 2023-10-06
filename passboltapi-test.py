@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
         parent_folder_name = "MY-PASSWORD-FOLDER"  # folder must exist and be unique in passbolt.
 
-        folders_hierarchy = ["top-level", "intermediate-level", "low-level"]
+        folders_hierarchy = ["ATEXO", "intermediate-level", "low-level"]
 
         for i in range(len(folders_hierarchy)):
             print("Create folder " + folders_hierarchy[i])
@@ -25,9 +25,7 @@ if __name__ == '__main__':
                 result = passbolt.create_or_get_folder(name=folders_hierarchy[i])
             else:
                 result = passbolt.create_or_get_folder(name=folders_hierarchy[i], parent_folder_name=folders_hierarchy[i-1])
-
             print("Changed : " + str(result.changed))
-
 
         print("Create a user in 'ops' team if not exist, create groups if not exist, and add user to groups")
         new_user = PassboltCreateUserTuple(
@@ -55,7 +53,7 @@ if __name__ == '__main__':
             name=new_password,
             password=new_password,
             username="john-doe",
-            folder="top-level",
+            folder="low-level",
             groups=["ops"]
         )
         result_3 = passbolt.create_or_update_resource(new_resource)

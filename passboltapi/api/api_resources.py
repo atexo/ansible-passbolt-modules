@@ -40,7 +40,7 @@ class PassboltResourceNotFoundError(Exception):
 
 def _encrypt_secrets(api: "APIClient", secret_text: str, recipients: List[PassboltUserTuple]) -> List[Mapping]:
     return [
-        {"user_id": user.id, "data": api.encrypt(secret_text, user.gpgkey["fingerprint"])} for user in recipients
+        {"user_id": user.id, "data": api.encrypt(secret_text, user.gpgkey.fingerprint)} for user in recipients
     ]
 
 
@@ -288,7 +288,7 @@ def share_resource_with_users(
         return
 
     lookup_users: Mapping[PassboltUserIdType, PassboltUserTuple] = {user.id: user for user in users_list}
-    self_user_id = [user.id for user in users_list if api.user_fingerprint == user.gpgkey["fingerprint"]]
+    self_user_id = [user.id for user in users_list if api.user_fingerprint == user.gpgkey.fingerprint]
 
     if self_user_id:
         self_user_id = self_user_id[0]
