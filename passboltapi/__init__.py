@@ -78,7 +78,7 @@ class APIClient:
         self.user_fingerprint = self.config["PASSBOLT"]["USER_FINGERPRINT"].upper().replace(" ", "")
 
         if platform.system() == "Darwin":
-            self.gpg = gnupg.GPG(gnupghome='/path/to/home/directory')
+            self.gpg = gnupg.GPG(gnupghome='/usr/local/bin/')
         else:
             self.gpg = gnupg.GPG()
 
