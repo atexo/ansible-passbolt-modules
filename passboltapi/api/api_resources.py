@@ -271,7 +271,7 @@ def update_resource(
 
     if payload:
         r = api.put(f"/resources/{resource_id}.json", payload, return_response_object=True)
-        return r
+        return get_by_id(api=api, resource_id=resource_id)
 
 
 def share_resource_with_users(
