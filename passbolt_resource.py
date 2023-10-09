@@ -52,7 +52,7 @@ options:
         description: URI of the resource
         required: true
         type: str
-    folder_name:
+    folder_id:
         description: Name of the folder where the resource must be created.
         required: false
         type: str
@@ -81,7 +81,7 @@ EXAMPLES = r'''
     username: "john-doe"
     password: "my-secret-password"
     uri: "https://example.com"
-    folder_name: "test-folder"
+    folder_id: "00112233-4455-6677-8899-aabbccddeeff"
     state: "present"
   delegate_to: localhost
 '''
@@ -108,7 +108,7 @@ def run_module():
         username=dict(type='str', required=True),
         password=dict(type='str', required=True, no_log=True),
         uri=dict(type='str', required=False, default=None),
-        folder_name=dict(type='str', required=False, default=None),
+        folder_id=dict(type='str', required=False, default=None),
         groups=dict(type='list', required=False, default=[]),
         state=dict(type='str', required=False, default="present"),
     )
@@ -161,7 +161,7 @@ def run_module():
                 uri=module.params['uri'],
                 password=module.params['password'],
                 username=module.params['username'],
-                folder=module.params['folder_name'],
+                folder_id=module.params['folder_id'],
                 groups=module.params['groups'],
             )
 

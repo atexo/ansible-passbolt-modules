@@ -51,6 +51,7 @@ Allows you to create folders.
     passbolt_admin_user_public_key_file: "{{ public_key.path }}"
     passbolt_admin_user_private_key_file: "{{ private_key.path }}"
     name: "test-folder"
+  register: parent_folder
   delegate_to: localhost
 
 - name: "Create a folder under the 'test-folder'"
@@ -61,7 +62,7 @@ Allows you to create folders.
     passbolt_admin_user_public_key_file: "{{ public_key.path }}"
     passbolt_admin_user_private_key_file: "{{ private_key.path }}"
     name: "sub-folder"
-    parent_folder_name: "test-folder"
+    folder_parent_id: "{{ parent_folder.id }}"
   delegate_to: localhost
 ```
 
@@ -78,7 +79,7 @@ passbolt_resources:
     passbolt_admin_user_private_key_file: passbolt_private.txt
     name: my-api-password
     content: the-actual-password
-    folder_id: 5b024c98-777e-487e-99f1-0bf75de3f685
+    folder_id: 00112233-4455-6677-8899-aabbccddeeff
     state: present
 ```
 
