@@ -102,8 +102,8 @@ def run_module():
     # for consumption, for example, in a subsequent task
     result = dict(
         changed=False,
-        original_message='',
-        message=''
+        folder_id='',
+        folder_parent_id=''
     )
 
     # the AnsibleModule object will be our abstraction working with Ansible
@@ -140,6 +140,8 @@ def run_module():
                                                             parent_folder_name=module.params['parent_folder_name'])
 
     result['changed'] = passbolt_api_result.changed
+    result['folder_parent_id'] = passbolt_api_result.data.folder_parent_id
+    result['folder_id'] = passbolt_api_result.data.id
 
     module.exit_json(**result)
 

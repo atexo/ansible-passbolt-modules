@@ -25,6 +25,7 @@ if __name__ == '__main__':
                 result = passbolt.create_or_get_folder(name=folders_hierarchy[i])
             else:
                 result = passbolt.create_or_get_folder(name=folders_hierarchy[i], parent_folder_name=folders_hierarchy[i-1])
+            print(result.data)
             print("Changed : " + str(result.changed))
 
         print("Create a user in 'ops' team if not exist, create groups if not exist, and add user to groups")

@@ -173,6 +173,7 @@ def run_module():
             print('Try to get resource in passbolt. Delete it if found.')
 
     result['changed'] = passbolt_api_result.changed
+    result['resource_id'] = passbolt_api_result.data.id
 
     module.exit_json(**result)
 
