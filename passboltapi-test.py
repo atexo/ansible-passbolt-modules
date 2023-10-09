@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
         parent_folder_name = "MY-PASSWORD-FOLDER"  # folder must exist and be unique in passbolt.
 
-        folders_hierarchy = ["ATEXO", "intermediate-level", "low-level"]
+        folders_hierarchy = ["ATEXO", "intermediate-level", "intermediate-level"]
 
         parent_folder = None
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
             name=new_password,
             password=new_password,
             username="john-doe",
-            folder="low-level",
+            folder_id=parent_folder.data.id,
             groups=["ops"]
         )
         result_3 = passbolt.create_or_update_resource(new_resource)
@@ -71,7 +71,7 @@ if __name__ == '__main__':
             name=new_password,
             password=new_password,
             username="john-doe",
-            folder="low-level",
+            folder_id=parent_folder.data.id,
             groups=["all"]
         )
         result_4 = passbolt.create_or_update_resource(new_resource)

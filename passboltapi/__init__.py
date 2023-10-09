@@ -356,14 +356,13 @@ class PassboltAPI(APIClient):
 
         result_tuple = PassboltOperationResultTuple(None, False)
 
-        folder_result_tuple = self.create_or_get_folder(name=resource.folder)
-        folder: PassboltFolderTuple = folder_result_tuple.data
-
         try:
-            existing_resource = passbolt_resource_api.get_by_name(api=self, name=resource.name)
+            existing_resource = passbolt_resource_api.get_by_name(api=self,
+                                                                  name=resource.name,
+                                                                  folder_parent_id=resource.folder_id)
 
             passbolt_resource_api.move_resource_to_folder(
-                api=self, resource_id=existing_resource.id, folder_id=folder.id)
+                api=self, resource_id=existing_resource.id, folder_id=resource.folder_id)
 
             updated_resource: PassboltResourceTuple = passbolt_resource_api.update_resource(
                 api=self,
@@ -393,7 +392,7 @@ class PassboltAPI(APIClient):
                 description=resource.description,
                 uri=resource.uri,
                 password=resource.password,
-                folder_id=folder.id,
+                folder_id=resource.folder_id,
                 groups=resource.groups
             )
 

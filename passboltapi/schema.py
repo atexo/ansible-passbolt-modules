@@ -111,7 +111,7 @@ class PassboltResourceTuple(NamedTuple):
 class PassboltCreateResourceTuple(NamedTuple):
     name: str
     password: str
-    folder: str
+    folder_id: PassboltFolderIdType = None
     username: str = ""
     description: str = None
     uri: str = None
