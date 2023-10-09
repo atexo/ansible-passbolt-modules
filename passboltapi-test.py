@@ -57,6 +57,7 @@ if __name__ == '__main__':
             groups=["ops"]
         )
         result_3 = passbolt.create_or_update_resource(new_resource)
+        print("Folder : " + str(result_3.data))
         print("Changed : " + str(result_3.changed))
 
         print("Create a new password shared with 'all' team")

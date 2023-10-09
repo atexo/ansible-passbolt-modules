@@ -86,7 +86,7 @@ class PassboltCreateUserTuple(NamedTuple):
     username: str
     first_name: str = None
     last_name: str = None
-    groups: [str] = None
+    groups: List[str] = []
 
 
 class PassboltResourceTuple(NamedTuple):
@@ -115,7 +115,7 @@ class PassboltCreateResourceTuple(NamedTuple):
     username: str = ""
     description: str = None
     uri: str = None
-    groups: [str] = None
+    groups: List[str] = []
 
 
 class PassboltResourceTypeTuple(NamedTuple):
