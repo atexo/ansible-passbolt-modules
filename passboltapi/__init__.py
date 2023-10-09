@@ -367,6 +367,7 @@ class PassboltAPI(APIClient):
             updated_resource: PassboltResourceTuple = passbolt_resource_api.update_resource(
                 api=self,
                 resource_id=existing_resource.id,
+                groups=resource.groups,
                 name=resource.name,
                 username=resource.username,
                 description=resource.description,

@@ -225,6 +225,7 @@ def update_resource(
         username: Optional[str] = None,
         description: Optional[str] = None,
         uri: Optional[str] = None,
+        groups: [str] = None,
         resource_type_id: Optional[PassboltResourceTypeIdType] = None,
         password: Optional[str] = None,
 ):
@@ -271,7 +272,25 @@ def update_resource(
 
     if payload:
         r = api.put(f"/resources/{resource_id}.json", payload, return_response_object=True)
-        return get_by_id(api=api, resource_id=resource_id)
+
+
+    # Share resource
+    users_list = []
+    groups_list = []
+
+    for group_name in groups:
+        try:
+            group: PassboltGroupTuple = passbolt_group_api.get_by_name(api=api, group_name=group_name)
+            groups_list.append(group)
+            users_list.extend(group.groups_users)
+        except passbolt_group_api.PassboltGroupNotFoundError:
+            pass
+
+
+    share_resource_with_users(api=api, resource=resource, password=password, users_list=users_list,
+                              groups_list=groups_list)
+
+    return get_by_id(api=api, resource_id=resource_id)
 
 
 def share_resource_with_users(
