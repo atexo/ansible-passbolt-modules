@@ -322,8 +322,6 @@ def share_resource_with_users(
         "secrets": _encrypt_secrets(api=api, secret_text=password, recipients=lookup_users.values()),
     }
 
-    print(json.dumps(share_payload, indent=4))
-
     # Simulate sharing with folder perms
     r_simulate = api.post(
         f"/share/simulate/resource/{resource.id}.json", share_payload, return_response_object=True
