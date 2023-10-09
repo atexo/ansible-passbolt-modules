@@ -26,7 +26,7 @@ if __name__ == '__main__':
             if i == 0:
                 result = passbolt.create_or_get_folder(name=folders_hierarchy[i])
             else:
-                result = passbolt.create_or_get_folder(name=folders_hierarchy[i], parent_folder_id=result.data.id)
+                result = passbolt.create_or_get_folder(name=folders_hierarchy[i], folder_parent_id=result.data.id)
             print(result.data)
             print("Changed : " + str(result.changed))
 
