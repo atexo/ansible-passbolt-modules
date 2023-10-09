@@ -40,7 +40,7 @@ class PassboltResourceNotFoundError(Exception):
 
 def _encrypt_secrets(api: "APIClient", secret_text: str, recipients: List[PassboltUserTuple]) -> List[Mapping]:
     return [
-        {"user_id": user.id, "data": api.encrypt(secret_text, user.gpgkey['fingerprint'])} for user in recipients
+        {"user_id": user.id, "data": api.encrypt(secret_text, user.gpgkey.fingerprint)} for user in recipients
     ]
 
 
