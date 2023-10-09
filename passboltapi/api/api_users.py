@@ -80,7 +80,12 @@ def get_by_id(api: "APIClient", user_id: PassboltUserIdType) -> PassboltUserTupl
     found_user = response["body"]
 
     if found_user:
-        return constructor(PassboltUserTuple)(found_user)
+        return constructor(
+            PassboltUserTuple,
+            sub_constructors={
+                "gpgkey": constructor(PassboltOpenPgpKeyTuple),
+            },
+         )(found_user)
     else:
         raise PassboltUserNotFoundError(f"User id {user_id} not found")
 
@@ -97,7 +102,12 @@ def get_by_username(api: "APIClient", username: str) -> PassboltUserTuple:
     found_user = [user for user in response["body"] if user["username"] == username]
 
     if len(found_user) == 1:
-        return constructor(PassboltUserTuple)(found_user[0])
+        return constructor(
+            PassboltUserTuple,
+            sub_constructors={
+                "gpgkey": constructor(PassboltOpenPgpKeyTuple),
+            },
+         )(found_user[0])
     else:
         raise PassboltUserNotFoundError(f"User {username} not found")
 

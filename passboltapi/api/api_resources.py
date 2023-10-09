@@ -22,6 +22,7 @@ from passboltapi.schema import (
     PassboltUserIdType,
     PassboltUserTuple,
     constructor, PassboltSecretTuple, PassboltResourceTypeTuple, PassboltFolderTuple, PassboltGroupTuple,
+    PassboltOpenPgpKeyTuple,
 )
 
 
@@ -309,7 +310,7 @@ def share_resource_with_users(
         return
 
     lookup_users: Mapping[PassboltUserIdType, PassboltUserTuple] = {user.id: user for user in users_list}
-    self_user_id = [user.id for user in users_list if api.user_fingerprint == user.gpgkey["fingerprint"]]
+    self_user_id = [user.id for user in users_list if api.user_fingerprint == user.gpgkey.fingerprint]
 
     if self_user_id:
         self_user_id = self_user_id[0]
