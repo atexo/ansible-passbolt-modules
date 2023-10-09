@@ -68,7 +68,7 @@ if __name__ == '__main__':
         print("Create a new password shared with 'all' team")
         new_password = f"passbolt-password@-%s" % (now.strftime("%Y-%m-%d-T%H%M%S"))
         new_resource = PassboltCreateResourceTuple(
-            name=new_password,
+            name="new_password",
             password=new_password,
             username="john-doe",
             folder_id=parent_folder.data.id,

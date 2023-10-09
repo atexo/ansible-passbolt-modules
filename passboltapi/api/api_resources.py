@@ -286,6 +286,8 @@ def update_resource(
         except passbolt_group_api.PassboltGroupNotFoundError:
             pass
 
+    # Convert to tuple
+    users_list = [passbolt_user_api.get_by_id(api=api, user_id=item["user_id"]) for item in users_list]
 
     share_resource_with_users(api=api, resource=resource, password=password, users_list=users_list,
                               groups_list=groups_list)
