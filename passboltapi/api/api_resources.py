@@ -22,7 +22,7 @@ from passboltapi.schema import (
     PassboltUserIdType,
     PassboltUserTuple,
     constructor, PassboltSecretTuple, PassboltResourceTypeTuple, PassboltFolderTuple, PassboltGroupTuple,
-    PassboltOpenPgpKeyTuple,
+    PassboltOpenPgpKeyTuple, PassboltPermissionTuple,
 )
 
 
@@ -183,7 +183,7 @@ def get_by_name(api: "APIClient", name: str,
 
     https://help.passbolt.com/api/resources/read-index
     """
-    response = api.get(f"/resources.json")
+    response = api.get(f"/resources.json?")
     resources_array = [constructor(PassboltResourceTuple)(resource) for resource in response["body"]]
 
     if folder_parent_id:
@@ -205,6 +205,17 @@ def get_by_name(api: "APIClient", name: str,
         else:
             raise PassboltResourceError(f"More than one resource found for {name}")
 
+
+def get_permissions_by_id(api: "APIClient", resource_id: PassboltResourceIdType) -> List[PassboltPermissionTuple]:
+    """
+    Read a resource permissions using the resource identifier.
+
+    https://help.passbolt.com/api/permissions/read
+    """
+    response = api.get(f"/permissions/resource/{resource_id}.json", return_response_object=True)
+    response = response.json()["body"]
+
+    return [constructor(PassboltPermissionTuple)(item) for item in response]
 
 def move_resource_to_folder(api: "APIClient", resource_id: PassboltResourceIdType, folder_id: PassboltFolderIdType):
     """
@@ -235,7 +246,38 @@ def update_resource(
 
     https://help.passbolt.com/api/resources/update
     """
+
+    # Fetch existing resource
     resource: PassboltResourceTuple = get_by_id(api=api, resource_id=resource_id)
+
+    # Check if groups permissions are set. If not, delete resource and re-create it
+    # TODO : improve this logic
+    permissions = get_permissions_by_id(api=api, resource_id=resource_id)
+    configured_groups=[]
+
+    for permission in permissions:
+        if permission.aro == "Group":
+            group = passbolt_group_api.get_by_id(api=api, group_id=permission.aro_foreign_key)
+            configured_groups.append(group.name)
+
+    # Sort list before comparison
+    groups.sort()
+    configured_groups.sort()
+
+    if groups != configured_groups:
+        delete_by_id(api=api, resource_id=resource_id)
+        return create(
+            api=api,
+            name=name,
+            password=password,
+            username=username,
+            description=description,
+            uri=uri,
+            groups=groups,
+            resource_type_id=resource_type_id,
+            folder_id=resource.folder_parent_id
+        )
+
     secret = _get_secret(api=api, resource_id=resource_id)
     secret_type = _get_secret_type(api=api, resource_type_id=resource.resource_type_id)
     resource_type_id = resource_type_id if resource_type_id else resource.resource_type_id
@@ -273,12 +315,6 @@ def update_resource(
 
     if payload:
         r = api.put(f"/resources/{resource_id}.json", payload, return_response_object=True)
-
-    resource = get_by_id(api=api, resource_id=resource_id)
-
-    # Move resource
-    if resource.folder_parent_id:
-        move_resource_to_folder(api=api, resource_id=resource.id, folder_id=resource.folder_parent_id)
 
     return get_by_id(api=api, resource_id=resource_id)
 

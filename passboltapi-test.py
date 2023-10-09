@@ -72,7 +72,7 @@ if __name__ == '__main__':
             password=new_password,
             username="john-doe",
             folder_id=parent_folder.data.id,
-            groups=["all"]
+            groups=["exploitation"]
         )
         result_4 = passbolt.create_or_update_resource(new_resource)
         print("Changed : " + str(result_4.changed))
