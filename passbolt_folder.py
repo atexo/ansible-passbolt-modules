@@ -40,8 +40,8 @@ options:
         description: Name of the folder
         required: true
         type: str
-    parent_folder_name:
-        description: Name of the parent folder
+    parent_folder_id:
+        description: Identifier of the parent folder
         required: true
         type: str
 
@@ -68,7 +68,7 @@ EXAMPLES = r'''
     passbolt_admin_user_public_key_file: "{{ public_key.path }}"
     passbolt_admin_user_private_key_file: "{{ private_key.path }}"
     name: "sub-folder"
-    parent_folder_name: "test-folder"
+    parent_folder_id: "00112233-4455-6677-8899-aabbccddeeff"
   delegate_to: localhost
 '''
 
@@ -92,7 +92,7 @@ def run_module():
         passbolt_admin_user_public_key_file=dict(type='str', required=True, no_log=True),
         passbolt_admin_user_private_key_file=dict(type='str', required=True, no_log=True),
         name=dict(type='str', required=True),
-        parent_folder_name=dict(type='str', required=False, default=None),
+        parent_folder_id=dict(type='str', required=False, default=None),
     )
 
     # seed the result dict in the object
@@ -135,7 +135,7 @@ def run_module():
         passbolt.import_public_keys()
 
         passbolt_api_result = passbolt.create_or_get_folder(name=module.params['name'],
-                                                            parent_folder_name=module.params['parent_folder_name'])
+                                                            parent_folder_id=module.params['parent_folder_id'])
 
     result['changed'] = passbolt_api_result.changed
     result['folder_parent_id'] = passbolt_api_result.data.folder_parent_id
