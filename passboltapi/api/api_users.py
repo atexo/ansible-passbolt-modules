@@ -77,7 +77,7 @@ def get_by_id(api: "APIClient", user_id: PassboltUserIdType) -> PassboltUserTupl
     API Reference : https://help.passbolt.com/api/users/read
     """
     response = api.get(f"/users/{user_id}.json")
-    found_user = response.json()["body"]
+    found_user = response["body"]
 
     if found_user:
         return constructor(PassboltUserTuple)(found_user)
