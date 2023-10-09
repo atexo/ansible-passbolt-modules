@@ -274,24 +274,11 @@ def update_resource(
     if payload:
         r = api.put(f"/resources/{resource_id}.json", payload, return_response_object=True)
 
+    resource = get_by_id(api=api, resource_id=resource_id)
 
-    # Share resource
-    users_list = []
-    groups_list = []
-
-    for group_name in groups:
-        try:
-            group: PassboltGroupTuple = passbolt_group_api.get_by_name(api=api, group_name=group_name)
-            groups_list.append(group)
-            users_list.extend(group.groups_users)
-        except passbolt_group_api.PassboltGroupNotFoundError:
-            pass
-
-    # Convert to tuple
-    users_list = [passbolt_user_api.get_by_id(api=api, user_id=item["user_id"]) for item in users_list]
-
-    share_resource_with_users(api=api, resource=resource, password=password, users_list=users_list,
-                              groups_list=groups_list)
+    # Move resource
+    if resource.folder_parent_id:
+        move_resource_to_folder(api=api, resource_id=resource.id, folder_id=resource.folder_parent_id)
 
     return get_by_id(api=api, resource_id=resource_id)
 
