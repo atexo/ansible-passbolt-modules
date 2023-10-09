@@ -301,15 +301,15 @@ class PassboltAPI(APIClient):
 
 
     def create_or_get_folder(self, name: str,
-                             parent_folder_name: str = None) -> PassboltOperationResultTuple:
+                             parent_folder_id: PassboltFolderIdType = None) -> PassboltOperationResultTuple:
         """
         Create a folder if not exist. Parent folder can be set using the parent folder name.
         """
 
         result_tuple = PassboltOperationResultTuple(None, False)
 
-        if parent_folder_name:
-            parent_folder: PassboltFolderTuple = passbolt_folder_api.get_by_name(api=self, name=parent_folder_name)
+        if parent_folder_id:
+            parent_folder: PassboltFolderTuple = passbolt_folder_api.get_by_id(api=self, folder_id=parent_folder_id)
             folder_parent_id = parent_folder.id
         else:
             parent_folder = None
@@ -318,7 +318,7 @@ class PassboltAPI(APIClient):
         try:
             result_tuple.data = passbolt_folder_api.get_by_name(api=self, name=name, folder_parent_id=folder_parent_id)
         except passbolt_folder_api.PassboltFolderNotFoundError:
-            print(f"Folder %s not found in folder %s - %s"%(name, parent_folder_name, folder_parent_id))
+            print(f"Folder %s not found in folder %s"%(name, folder_parent_id))
             result_tuple.changed = True
             result_tuple.data = passbolt_folder_api.create(api=self, name=name, folder_parent_id=folder_parent_id)
 

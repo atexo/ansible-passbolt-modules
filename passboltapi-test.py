@@ -19,14 +19,18 @@ if __name__ == '__main__':
 
         folders_hierarchy = ["ATEXO", "intermediate-level", "low-level"]
 
+        parent_folder = None
+
         for i in range(len(folders_hierarchy)):
             print("Create folder " + folders_hierarchy[i])
             if i == 0:
                 result = passbolt.create_or_get_folder(name=folders_hierarchy[i])
             else:
-                result = passbolt.create_or_get_folder(name=folders_hierarchy[i], parent_folder_name=folders_hierarchy[i-1])
+                result = passbolt.create_or_get_folder(name=folders_hierarchy[i], parent_folder_id=result.data.id)
             print(result.data)
             print("Changed : " + str(result.changed))
+
+            parent_folder = result
 
         print("Create a user in 'ops' team if not exist, create groups if not exist, and add user to groups")
         new_user = PassboltCreateUserTuple(
