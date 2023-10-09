@@ -102,8 +102,6 @@ def run_module():
     # for consumption, for example, in a subsequent task
     result = dict(
         changed=False,
-        folder_id='',
-        folder_parent_id=''
     )
 
     # the AnsibleModule object will be our abstraction working with Ansible
