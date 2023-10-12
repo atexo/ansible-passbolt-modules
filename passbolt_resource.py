@@ -162,6 +162,7 @@ def run_module():
                 password=module.params['password'],
                 username=module.params['username'],
                 folder_id=module.params['folder_id'],
+                description=module.params['description'],
                 groups=module.params['groups'],
             )
 
