@@ -108,6 +108,7 @@ def run_module():
         username=dict(type='str', required=True),
         password=dict(type='str', required=True, no_log=True),
         uri=dict(type='str', required=False, default=None),
+        description=dict(type='str', required=False, default=None),
         folder_id=dict(type='str', required=False, default=None),
         groups=dict(type='list', required=False, default=[]),
         state=dict(type='str', required=False, default="present"),
