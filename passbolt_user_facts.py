@@ -106,7 +106,10 @@ def run_module():
         user_list = []
         for user in passbolt.list_users():
             user_list.append({
-                "username": user.username 
+                "id": user.id,
+                "username": user.username,
+                "first_name": user.profile["first_name"],
+                "last_name": user.profile["last_name"],
             })
 
     result['changed'] = False
