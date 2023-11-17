@@ -4,7 +4,8 @@
 # https://help.passbolt.com/api/groups
 
 # Imports
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
+
 if TYPE_CHECKING:
     from passboltapi import APIClient
 
@@ -13,7 +14,7 @@ import passboltapi.api.api_users as passbolt_user_api
 from passboltapi.schema import (
     PassboltGroupIdType,
     PassboltGroupTuple,
-    constructor, PassboltUserTuple,
+    constructor, PassboltUserTuple, PassboltUserIdType,
 )
 
 
@@ -38,7 +39,7 @@ def get_by_id(api: "APIClient", group_id: PassboltGroupIdType) -> PassboltGroupT
         raise PassboltGroupNotFoundError(f"Group id {group_id} not found")
 
 
-def get_by_name(api: "APIClient", group_name: str):
+def get_by_name(api: "APIClient", group_name: str) -> PassboltGroupTuple:
     """
     Fetch a single group using its name via the read-index endpoint. First list all the groups.
     Return a PassboltGroupTuple if a group with the exact name provided was found. 
@@ -54,6 +55,16 @@ def get_by_name(api: "APIClient", group_name: str):
         raise PassboltGroupNotFoundError(f"Group {group_name} not found")
 
 
+def get_by_associated_user(api: "APIClient", user_id: PassboltUserIdType) -> List[PassboltGroupTuple]:
+    """
+    Fetch all groups linked to a specific user.
+
+    API Reference : https://help.passbolt.com/api/groups/read-index
+    """
+    response = api.get(f"/groups.json", params={"filter[has-users]": user_id})
+    return [constructor(PassboltGroupTuple)(group) for group in response["body"]]
+
+
 def create_group(api: "APIClient", group_name: str, group_manager: PassboltUserTuple) -> PassboltGroupTuple:
     """
     Create a group in Passbolt with a user as group manager.
@@ -64,15 +75,15 @@ def create_group(api: "APIClient", group_name: str, group_manager: PassboltUserT
     manager = passbolt_user_api.get_by_id(api=api, user_id=group_manager.id)
 
     response = api.post("/groups.json",
-                         {
-                             "name": group_name,
-                             "groups_users": [
-                                 {
-                                     "user_id": manager.id,
-                                     "is_admin": True
-                                 }
-                             ]
-                         }, return_response_object=True)
+                        {
+                            "name": group_name,
+                            "groups_users": [
+                                {
+                                    "user_id": manager.id,
+                                    "is_admin": True
+                                }
+                            ]
+                        }, return_response_object=True)
 
     response = response.json()
     return constructor(PassboltGroupTuple)(response["body"])

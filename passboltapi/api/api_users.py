@@ -42,13 +42,13 @@ def create_user(api: "APIClient", username: str, first_name: str, last_name: str
     """
 
     response = api.post("/users.json",
-                         {
-                             "username": username,
-                             "profile": {
-                                 "first_name": first_name,
-                                 "last_name": last_name
-                             }
-                         }, return_response_object=True)
+                        {
+                            "username": username,
+                            "profile": {
+                                "first_name": first_name,
+                                "last_name": last_name
+                            }
+                        }, return_response_object=True)
 
     response = response.json()
     return constructor(PassboltUserTuple)(response["body"])
@@ -85,7 +85,7 @@ def get_by_id(api: "APIClient", user_id: PassboltUserIdType) -> PassboltUserTupl
             sub_constructors={
                 "gpgkey": constructor(PassboltOpenPgpKeyTuple),
             },
-         )(found_user)
+        )(found_user)
     else:
         raise PassboltUserNotFoundError(f"User id {user_id} not found")
 
@@ -107,13 +107,14 @@ def get_by_username(api: "APIClient", username: str) -> PassboltUserTuple:
             sub_constructors={
                 "gpgkey": constructor(PassboltOpenPgpKeyTuple),
             },
-         )(found_user[0])
+        )(found_user[0])
     else:
         raise PassboltUserNotFoundError(f"User {username} not found")
 
 
 def list_users(
-    api: "APIClient", resource_or_folder_id: Union[None, PassboltResourceIdType, PassboltFolderIdType] = None, force_list=True
+        api: "APIClient", resource_or_folder_id: Union[None, PassboltResourceIdType, PassboltFolderIdType] = None,
+        force_list=True
 ) -> List[PassboltUserTuple]:
     if resource_or_folder_id is None:
         params = {}
@@ -135,7 +136,6 @@ def list_users(
 
 
 def list_users_with_folder_access(api: "APIClient", folder_id: PassboltFolderIdType) -> List[PassboltUserTuple]:
-
     folder_tuple = passbolt_folder_api.get_by_id(api=api, folder_id=folder_id)
 
     # resolve users
@@ -154,7 +154,8 @@ def list_users_with_folder_access(api: "APIClient", folder_id: PassboltFolderIdT
 
 
 # Update methods
-def update_user(api: "APIClient", user_id: PassboltUserIdType, username: str, first_name: str, last_name: str) -> PassboltUserTuple:
+def update_user(api: "APIClient", user_id: PassboltUserIdType, username: str, first_name: str,
+                last_name: str) -> PassboltUserTuple:
     """
     Create a user in Passbolt. Return a PassboltUserTuple if the user was successfully created
 
@@ -162,18 +163,19 @@ def update_user(api: "APIClient", user_id: PassboltUserIdType, username: str, fi
     """
 
     response = api.put(f"/users/{user_id}.json",
-                         {
-                             "username": username,
-                             "profile": {
-                                 "first_name": first_name,
-                                 "last_name": last_name
-                             }
-                         }, return_response_object=True)
+                       {
+                           "username": username,
+                           "profile": {
+                               "first_name": first_name,
+                               "last_name": last_name
+                           }
+                       }, return_response_object=True)
 
     response = response.json()
     return constructor(PassboltUserTuple)(response["body"])
 
-def add_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id: PassboltGroupIdType)\
+
+def add_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id: PassboltGroupIdType) \
         -> PassboltGroupTuple:
     """
     Add user to group. User must be active.
@@ -203,7 +205,8 @@ def add_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id: P
     return constructor(PassboltGroupTuple)(response["body"])
 
 
-def remove_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id: PassboltGroupIdType) -> PassboltGroupTuple:
+def remove_user_to_group(api: "APIClient", user_id: PassboltUserIdType,
+                         group_id: PassboltGroupIdType) -> PassboltGroupTuple:
     """
     Remove user from group
     """
@@ -227,6 +230,7 @@ def remove_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id
 
     response = response.json()
     return constructor(PassboltGroupTuple)(response["body"])
+
 
 # Delete methods
 def delete_by_id(api: "APIClient", user_id: PassboltResourceIdType):

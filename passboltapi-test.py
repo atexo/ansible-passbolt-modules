@@ -32,22 +32,25 @@ if __name__ == '__main__':
         #
         #     parent_folder = result
         #
-        print("Create a user in 'ops' team if not exist, create groups if not exist, and add user to groups")
-        new_user = PassboltCreateUserTuple(
-            username="alice@acme.com",
-            first_name="Alice",
-            last_name="Doe",
-            groups=["ops", "all"]
-        )
-        result_1 = passbolt.create_or_update_user(new_user)
-        print("Changed : " + str(result_1.changed))
+        # print("Create a user in 'ops' team if not exist, create groups if not exist, and add user to groups")
+        # new_user = PassboltCreateUserTuple(
+        #     username="alice@acme.com",
+        #     first_name="Alice",
+        #     last_name="Doe",
+        #     groups=["ops", "all"]
+        # )
+        # result_1 = passbolt.create_or_update_user(new_user)
+        # print("Changed : " + str(result_1.changed))
 
         print("Create a user 'all' team if not exist, create groups if not exist, and add user to groups")
         new_user = PassboltCreateUserTuple(
             username="mouloud.denfir@atexo.com",
             first_name="Mouloud",
             last_name="DENFIR",
-            groups=["debug"]
+            groups=[
+                "exploitation",
+                "debug"
+            ]
         )
         result_1 = passbolt.create_or_update_user(new_user)
 

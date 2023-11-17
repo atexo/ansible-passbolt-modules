@@ -299,7 +299,6 @@ class PassboltAPI(APIClient):
 
     # Folder API
 
-
     def create_or_get_folder(self, name: str,
                              folder_parent_id: PassboltFolderIdType = None) -> PassboltOperationResultTuple:
         """
@@ -318,7 +317,7 @@ class PassboltAPI(APIClient):
         try:
             result_tuple.data = passbolt_folder_api.get_by_name(api=self, name=name, folder_parent_id=folder_parent_id)
         except passbolt_folder_api.PassboltFolderNotFoundError:
-            print(f"Folder %s not found in folder %s"%(name, folder_parent_id))
+            print(f"Folder %s not found in folder %s" % (name, folder_parent_id))
             result_tuple.changed = True
             result_tuple.data = passbolt_folder_api.create(api=self, name=name, folder_parent_id=folder_parent_id)
 
@@ -326,7 +325,6 @@ class PassboltAPI(APIClient):
 
 
     # Group API
-
 
     def create_or_get_group(self, group_name: str) -> tuple[PassboltGroupTuple, bool]:
         """
@@ -340,7 +338,6 @@ class PassboltAPI(APIClient):
 
 
     # Resource API
-
 
     def read_resource_by_name(self, name: str) -> PassboltResourceTuple:
         """
@@ -421,7 +418,6 @@ class PassboltAPI(APIClient):
 
     # User API
 
-
     def create_or_update_user(self, user: PassboltCreateUserTuple) -> PassboltOperationResultTuple:
         """
         Create user if not found in Passbolt. Update it if found.
@@ -453,12 +449,17 @@ class PassboltAPI(APIClient):
             )
             result_tuple.changed = True
 
+        user_groups = passbolt_group_api.get_by_associated_user(api=self, user_id=result_tuple.data.id)
+        group_to_remove = [group for group in user_groups if group.name not in user.groups]
+
         add_user_to_groups_result = self.add_user_to_groups(user=result_tuple.data, groups=user.groups)
+        remove_user_from_groups_result = self.remove_user_from_groups(user=result_tuple.data, groups=group_to_remove)
 
         result_tuple.data = add_user_to_groups_result.data
-        result_tuple.changed = result_tuple.changed or add_user_to_groups_result.changed
+        result_tuple.changed = result_tuple.changed or add_user_to_groups_result.changed or remove_user_from_groups_result.changed
 
         return result_tuple
+
 
     def add_user_to_groups(self, user: PassboltUserTuple, groups: [str]) -> PassboltOperationResultTuple:
         """
@@ -478,6 +479,30 @@ class PassboltAPI(APIClient):
 
         # Update user using API
         result_tuple.data = passbolt_user_api.get_by_id(api=self, user_id=user.id)
+
+        return result_tuple
+
+
+    def remove_user_from_groups(self, user: PassboltUserTuple,
+                                groups: List[PassboltGroupTuple]) -> PassboltOperationResultTuple:
+        """
+        Remove user from the specified groups
+        """
+        result_tuple = PassboltOperationResultTuple(user, False)
+
+        for group in groups:
+            # Fetch all group user
+            group = passbolt_group_api.get_by_id(api=self, group_id=group.id)
+            for user_in_group in group.groups_users:
+                if user.id == user_in_group['user_id']:
+                    result_tuple.changed = True
+                    self.put(f"/groups/{group.id}.json",
+                    {
+                        "groups_users": [{
+                            "id": user_in_group["id"],
+                            "delete": True
+                        }]
+                    }, return_response_object=True)
 
         return result_tuple
 
