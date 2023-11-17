@@ -154,7 +154,24 @@ def list_users_with_folder_access(api: "APIClient", folder_id: PassboltFolderIdT
 
 
 # Update methods
+def update_user(api: "APIClient", user_id: PassboltUserIdType, username: str, first_name: str, last_name: str) -> PassboltUserTuple:
+    """
+    Create a user in Passbolt. Return a PassboltUserTuple if the user was successfully created
 
+    API Reference : https://help.passbolt.com/api/users/create
+    """
+
+    response = api.put(f"/users/{user_id}.json",
+                         {
+                             "username": username,
+                             "profile": {
+                                 "first_name": first_name,
+                                 "last_name": last_name
+                             }
+                         }, return_response_object=True)
+
+    response = response.json()
+    return constructor(PassboltUserTuple)(response["body"])
 
 def add_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id: PassboltGroupIdType)\
         -> PassboltGroupTuple:
@@ -210,7 +227,6 @@ def remove_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id
 
     response = response.json()
     return constructor(PassboltGroupTuple)(response["body"])
-
 
 # Delete methods
 def delete_by_id(api: "APIClient", user_id: PassboltResourceIdType):

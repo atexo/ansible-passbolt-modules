@@ -431,8 +431,18 @@ class PassboltAPI(APIClient):
         result_tuple = PassboltOperationResultTuple(None, False)
 
         try:
-            result_tuple.data = passbolt_user_api.get_by_username(api=self, username=user.username)
-            result_tuple.changed = False
+            original_user = passbolt_user_api.get_by_username(api=self, username=user.username)
+            result_tuple.data = passbolt_user_api.update_user(
+                api=self,
+                user_id=original_user.id,
+                username=user.username,
+                first_name=user.first_name,
+                last_name=user.last_name
+            )
+
+            result_tuple.changed = original_user.username != user.username \
+                                   or original_user.profile["first_name"] != user.first_name \
+                                   or original_user.profile["last_name"] != user.last_name
 
         except passbolt_user_api.PassboltUserNotFoundError:
             result_tuple.data = passbolt_user_api.create_user(
