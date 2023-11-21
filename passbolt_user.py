@@ -172,13 +172,13 @@ def run_module():
             )
 
             passbolt_api_result = passbolt.create_or_update_user(new_user)
+            result['user_id'] = passbolt_api_result.data.id
 
         elif module.params['state'] == 'absent':
 
             passbolt_api_result = passbolt.delete_user(module.params['username'])
 
     result['changed'] = passbolt_api_result.changed
-    result['user_id'] = passbolt_api_result.data.id
 
     module.exit_json(**result)
 
