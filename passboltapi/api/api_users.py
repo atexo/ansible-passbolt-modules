@@ -157,9 +157,9 @@ def list_users_with_folder_access(api: "APIClient", folder_id: PassboltFolderIdT
 def update_user(api: "APIClient", user_id: PassboltUserIdType, username: str, first_name: str,
                 last_name: str) -> PassboltUserTuple:
     """
-    Create a user in Passbolt. Return a PassboltUserTuple if the user was successfully created
+    Update a user in Passbolt. Return a PassboltUserTuple if the user was successfully created
 
-    API Reference : https://help.passbolt.com/api/users/create
+    API Reference : https://help.passbolt.com/api/users/update
     """
 
     response = api.put(f"/users/{user_id}.json",
@@ -179,6 +179,8 @@ def add_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id: P
         -> PassboltGroupTuple:
     """
     Add user to group. User must be active.
+
+    API  Reference : https://help.passbolt.com/api/groups/update
     """
 
     # Fetch group
@@ -188,7 +190,7 @@ def add_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id: P
     user = get_by_id(api=api, user_id=user_id)
 
     if not user.active:
-        raise PassboltUserNotActiveError(f"User {user.username} id {user.id} is inactive : Cannot be added to a grouup")
+        raise PassboltUserNotActiveError(f"User is inactive : Cannot be added to a group")
 
     # Add user in group
     user_list = [{
