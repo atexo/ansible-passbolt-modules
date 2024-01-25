@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 import passboltapi.api.api_groups as passbolt_group_api
 import passboltapi.api.api_folders as passbolt_folder_api
+import passboltapi.api.api_resources as passbolt_resource_api
 
 from passboltapi.schema import (
     PassboltFolderIdType,
@@ -198,7 +199,15 @@ def add_user_to_group(api: "APIClient", user_id: PassboltUserIdType, group_id: P
         "is_admin": False
     }]
 
-    group_payload = {"name": group.name, "groups_users": user_list}
+    # Share group resources with user
+    resources_to_share = passbolt_resource_api.get_shared_resources(api=api, group=group)
+    print(f"Encrypting {len(resources_to_share)} password for user {user.username}")
+    encrypted_secrets = passbolt_resource_api.encrypt_resources(api=api, resources=resources_to_share, user=user)
+    group_payload = {
+        "name": group.name,
+        "groups_users": user_list,
+        "secrets": encrypted_secrets
+    }
 
     # Update group in API
     response = api.put(f"/groups/{group.id}.json", group_payload, return_response_object=True)

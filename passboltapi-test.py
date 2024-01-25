@@ -2,11 +2,9 @@
 #
 # This file is used to test various functions of the Passbolt API, used in the ansible modules.
 from datetime import datetime
-from passboltapi import PassboltCreateResourceTuple
 from passboltapi.schema import PassboltCreateUserTuple
 
 import passboltapi
-import sys
 
 if __name__ == '__main__':
     with passboltapi.PassboltAPI(config_path="config.ini", new_keys=True) as passbolt:
@@ -42,16 +40,16 @@ if __name__ == '__main__':
         # result_1 = passbolt.create_or_update_user(new_user)
         # print("Changed : " + str(result_1.changed))
 
-        print("Create a user 'all' team if not exist, create groups if not exist, and add user to groups")
+
         new_user = PassboltCreateUserTuple(
-            username="mouloud.denfir@atexo.com",
-            first_name="Mouloud",
-            last_name="DENFIR",
+            username="oceane.guyot@atexo.com",
+            first_name="Oceane",
+            last_name="GUYOT",
             groups=[
-                "exploitation",
-                "debug"
+                "bu_sub_n1"
             ]
         )
+        print("Create a user " + new_user.username + " if not exist and add it to groups " + str(new_user.groups))
         result_1 = passbolt.create_or_update_user(new_user)
 
         print("Changed : " + str(result_1.changed))
@@ -83,8 +81,8 @@ if __name__ == '__main__':
         # result_4 = passbolt.create_or_update_resource(new_resource)
         # print("Changed : " + str(result_4.changed))
         #
-        # print("Ensure user 'john-doe@acme.com' is not present")
-        # result_5 = passbolt.delete_user("john-doe@acme.com")
+        # print("Ensure user 'mouloud.denfir@atexo.com' is not present")
+        # result_5 = passbolt.delete_user("mouloud.denfir@atexo.com")
         # print("Changed : " + str(result_5.changed))
 
         # Create a resource if not exist

@@ -465,6 +465,9 @@ class PassboltAPI(APIClient):
         """
         Find groups passed in groups array, and assign the user to the found groups.
         """
+
+        print("Add user to groups")
+
         result_tuple = PassboltOperationResultTuple(user, False)
 
         groups_array: [PassboltGroupTuple] = [self.create_or_get_group(group_name=group_name) for group_name in groups]
@@ -495,14 +498,20 @@ class PassboltAPI(APIClient):
             group = passbolt_group_api.get_by_id(api=self, group_id=group.id)
             for user_in_group in group.groups_users:
                 if user.id == user_in_group['user_id']:
-                    result_tuple.changed = True
-                    self.put(f"/groups/{group.id}.json",
-                    {
+
+                    print("Remove user",user.username, "from group", group.name)
+
+                    payload = {
                         "groups_users": [{
                             "id": user_in_group["id"],
                             "delete": True
                         }]
-                    }, return_response_object=True)
+                    }
+
+                    print(payload)
+
+                    result_tuple.changed = True
+                    self.put(f"/groups/{group.id}.json",payload, return_response_object=True)
 
         return result_tuple
 

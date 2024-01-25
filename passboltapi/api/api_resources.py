@@ -22,7 +22,7 @@ from passboltapi.schema import (
     PassboltUserIdType,
     PassboltUserTuple,
     constructor, PassboltSecretTuple, PassboltResourceTypeTuple, PassboltFolderTuple, PassboltGroupTuple,
-    PassboltOpenPgpKeyTuple, PassboltPermissionTuple,
+    PassboltOpenPgpKeyTuple, PassboltPermissionTuple, PassboltGroupIdType,
 )
 
 
@@ -77,6 +77,21 @@ def _get_secret_type(api: "APIClient", resource_type_id: PassboltResourceTypeIdT
     raise PassboltError("The resource type definition is not valid or supported yet. ")
 
 
+def encrypt_resources(api: "APIClient", resources: List[PassboltResourceTuple], user: PassboltUserTuple)\
+        -> List[Mapping]:
+    """
+    Encrypt secrets from a resource list using one user
+    """
+
+    return [
+        {
+            "resource_id": resource.id,
+            "user_id": user.id,
+            "data": api.encrypt(get_password(api=api, resource_id=resource.id), user.gpgkey.fingerprint)
+        }
+        for resource in resources
+    ]
+
 def get_password_and_description(api: "APIClient", resource_id: PassboltResourceIdType) -> dict:
     resource: PassboltResourceTuple = get_by_id(api=api, resource_id=resource_id)
     secret: PassboltSecretTuple = _get_secret(api=api, resource_id=resource_id)
@@ -95,6 +110,15 @@ def get_password(api: "APIClient", resource_id: PassboltResourceIdType) -> str:
 def get_description(api: "APIClient", resource_id: PassboltResourceIdType) -> str:
     return get_password_and_description(api=api, resource_id=resource_id)["description"]
 
+
+def get_shared_resources(api: "APIClient", group: PassboltGroupTuple) -> List[PassboltResourceTuple]:
+    """
+    Get all resources shared with a specific group
+    """
+    response = api.get(f"/resources/.json?filter[is-shared-with-group]={group.id}", return_response_object=True)
+    response = response.json()["body"]
+
+    return [constructor(PassboltResourceTuple)(resource) for resource in response]
 
 def create(
         api: "APIClient",
