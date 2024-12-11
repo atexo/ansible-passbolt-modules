@@ -179,7 +179,7 @@ def run_module():
                 result['changed'] = True
                 result['resource_id'] = existing_resource.id
         
-            except passboltapi.api.api_resources.PassboltResourceNotFound:
+            except passbolt.api_resources.PassboltResourceNotFound:
                 result['changed'] = False
                 result['resource_id'] = None
             

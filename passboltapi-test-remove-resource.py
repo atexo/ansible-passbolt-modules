@@ -15,7 +15,7 @@ if __name__ == '__main__':
         passbolt.import_public_keys()   # import user keys to allow secrets encryption
         now = datetime.now()            # current date and time
 
-        folder_tree = ["Inventaire", "sem", "recette", "cd976-sem-rec-01"]
+        folder_tree = ["Inventaire", "sem", "recette", "cridf-sem-rec-01"]
         parent_folder:PassboltFolderTuple = None
         folder:PassboltFolderTuple = None
 
