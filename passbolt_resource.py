@@ -95,7 +95,7 @@ import sys
 sys.path.append("../library")
 
 import passboltapi
-from passboltapi import PassboltCreateResourceTuple, PassboltResourceTypeTuple
+from passboltapi import PassboltCreateResourceTuple, PassboltResourceTypeTuple, PassboltResourceNotFoundError
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
@@ -178,7 +178,7 @@ def run_module():
                 result['changed'] = True
                 result['resource_id'] = existing_resource.id
         
-            except passbolt.PassboltResourceNotFound:
+            except PassboltResourceNotFoundError:
                 result['changed'] = False
                 result['resource_id'] = None
             

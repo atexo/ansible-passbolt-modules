@@ -14,6 +14,7 @@ import passboltapi.api.api_resources_type as passbolt_resource_type_api
 import passboltapi.api.api_users as passbolt_user_api
 
 from passboltapi.schema import (
+    PassboltResourceNotFoundError,
     PassboltCreateResourceTuple,
     PassboltCreateUserTuple,
     PassboltDateTimeType,
