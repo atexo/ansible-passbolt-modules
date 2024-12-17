@@ -174,7 +174,7 @@ def run_module():
 
             try:
                 existing_resource:PassboltResourceTypeTuple = passbolt.read_resource_by_name(module.params['name'], module.params['folder_id'])
-                passbolt.delete_resource(existing_resource.id)
+                passbolt.delete_resource_by_id(existing_resource.id)
                 result['changed'] = True
                 result['resource_id'] = existing_resource.id
         
