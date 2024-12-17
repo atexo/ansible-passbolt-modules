@@ -14,6 +14,9 @@ import passboltapi.api.api_users as passbolt_user_api
 import passboltapi.api.api_resources_type as passbolt_resource_type_api
 
 from passboltapi.schema import (
+    PassboltValidationError,
+    PassboltResourceError,
+    PassboltResourceNotFoundError,
     PassboltFolderIdType,
     PassboltResourceIdType,
     PassboltResourceTuple,
@@ -24,20 +27,6 @@ from passboltapi.schema import (
     constructor, PassboltSecretTuple, PassboltResourceTypeTuple, PassboltFolderTuple, PassboltGroupTuple,
     PassboltOpenPgpKeyTuple, PassboltPermissionTuple, PassboltGroupIdType,
 )
-
-
-# Exceptions
-class PassboltResourceError(Exception):
-    pass
-
-
-class PassboltValidationError(Exception):
-    pass
-
-
-class PassboltResourceNotFoundError(Exception):
-    pass
-
 
 def _encrypt_secrets(api: "APIClient", secret_text: str, recipients: List[PassboltUserTuple]) -> List[Mapping]:
     return [

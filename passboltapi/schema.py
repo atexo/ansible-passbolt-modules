@@ -26,7 +26,6 @@ PassboltPermissionIdType: TypeAlias = str
 PassboltDateTimeType: TypeAlias = str
 PassboltFavoriteDetailsType: TypeAlias = dict
 
-
 class PassboltResourceType(Enum):
     PASSWORD = 1
     PASSWORD_WITH_DESCRIPTION = 2
@@ -88,6 +87,14 @@ class PassboltCreateUserTuple(NamedTuple):
     last_name: str = None
     groups: List[str] = []
 
+class PassboltResourceError(Exception):
+    pass
+
+class PassboltValidationError(Exception):
+    pass
+
+class PassboltResourceNotFoundError(Exception):
+    pass
 
 class PassboltResourceTuple(NamedTuple):
     id: PassboltResourceIdType
@@ -149,6 +156,7 @@ class PassboltGroupTuple(NamedTuple):
     modified_by: PassboltUserIdType
     name: str
     groups_users: List[dict] = []
+
 
 
 class PassboltOperationResultTuple:

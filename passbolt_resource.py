@@ -3,6 +3,7 @@
 # Copyright: (c) 2023, Jean-René Robin <jean-rene.robin@atexo.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
+
 __metaclass__ = type
 
 DOCUMENTATION = r'''
@@ -94,7 +95,7 @@ import sys
 sys.path.append("../library")
 
 import passboltapi
-from passboltapi import PassboltCreateResourceTuple
+from passboltapi import PassboltCreateResourceTuple, PassboltResourceTypeTuple, PassboltResourceNotFoundError
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
@@ -168,13 +169,21 @@ def run_module():
             )
 
             passbolt_api_result = passbolt.create_or_update_resource(new_resource)
+            result['changed'] = passbolt_api_result.changed
+            result['resource_id'] = passbolt_api_result.data.id
 
         elif module.params['state'] == 'absent':
-            print('Try to get resource in passbolt. Delete it if found.')
 
-    result['changed'] = passbolt_api_result.changed
-    result['resource_id'] = passbolt_api_result.data.id
-
+            try:
+                existing_resource:PassboltResourceTypeTuple = passbolt.read_resource_by_name(module.params['name'], module.params['folder_id'])
+                passbolt.delete_resource_by_id(existing_resource.id)
+                result['changed'] = True
+                result['resource_id'] = existing_resource.id
+        
+            except PassboltResourceNotFoundError:
+                result['changed'] = False
+                result['resource_id'] = None
+            
     module.exit_json(**result)
 
 

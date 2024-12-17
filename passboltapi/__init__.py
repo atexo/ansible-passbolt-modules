@@ -14,6 +14,7 @@ import passboltapi.api.api_resources_type as passbolt_resource_type_api
 import passboltapi.api.api_users as passbolt_user_api
 
 from passboltapi.schema import (
+    PassboltResourceNotFoundError,
     PassboltCreateResourceTuple,
     PassboltCreateUserTuple,
     PassboltDateTimeType,
@@ -339,12 +340,23 @@ class PassboltAPI(APIClient):
 
     # Resource API
 
-    def read_resource_by_name(self, name: str) -> PassboltResourceTuple:
+    def read_resource_by_name(self, name: str, folder_parent_id: int) -> PassboltResourceTuple:
         """
         Read a single resource in Passbolt
         """
-        return passbolt_resource_api.get_by_name(api=self, name=name)
+        return passbolt_resource_api.get_by_name(api=self, name=name, folder_parent_id=folder_parent_id)
 
+    def read_resource_by_id(self, resource_id: PassboltResourceIdType) -> PassboltResourceTuple:
+        """
+        Read a single resource in Passbolt
+        """
+        return passbolt_resource_api.get_by_id(api=self, resource_id=resource_id)
+
+    def delete_resource_by_id(self, resource_id: PassboltResourceIdType) -> PassboltOperationResultTuple:
+        """
+        Delete a single resource in Passbolt
+        """
+        return passbolt_resource_api.delete_by_id(api=self, resource_id=resource_id)
 
     def create_or_update_resource(self, resource: PassboltCreateResourceTuple) -> PassboltOperationResultTuple:
         """

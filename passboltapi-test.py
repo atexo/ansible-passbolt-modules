@@ -40,7 +40,6 @@ if __name__ == '__main__':
         # result_1 = passbolt.create_or_update_user(new_user)
         # print("Changed : " + str(result_1.changed))
 
-
         new_user = PassboltCreateUserTuple(
             username="oceane.guyot@atexo.com",
             first_name="Oceane",
