@@ -169,6 +169,8 @@ def run_module():
             )
 
             passbolt_api_result = passbolt.create_or_update_resource(new_resource)
+            result['changed'] = passbolt_api_result.changed
+            result['resource_id'] = passbolt_api_result.data.id
 
         elif module.params['state'] == 'absent':
 
@@ -182,9 +184,6 @@ def run_module():
                 result['changed'] = False
                 result['resource_id'] = None
             
-    result['changed'] = passbolt_api_result.changed
-    result['resource_id'] = passbolt_api_result.data.id
-
     module.exit_json(**result)
 
 
